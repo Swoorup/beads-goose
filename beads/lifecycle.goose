@@ -67,6 +67,23 @@ fn actor_matches(a: const u8[:], b: const u8[:]) -> bool { a == b || canonical_a
 
 fn is_pool(ctx: const Ctx&, assignee: const u8[:]) -> bool { contains(ctx.claim_pools, assignee) }
 
+// A priority as bd's flags take it, 0 to 4 with an optional P (Go's
+// validation.ParsePriority, which reads a leading integer the way Sscanf's
+// %d does), or -1.
+fn parse_priority(s: const u8[:]) -> i64 {
+    var t = trim(s);
+    if t.len > 0 && (t[0] == 'P' || t[0] == 'p') { t = t[1..]; }
+    var i = 0;
+    var negative = false;
+    if i < t.len && (t[i] == '+' || t[i] == '-') { negative = t[i] == '-'; i++; }
+    let start = i;
+    var n = 0;
+    while i < t.len && t[i] >= '0' && t[i] <= '9' && n < 1000 { n = n * 10 + (t[i] - '0') as i64; i++; }
+    if i == start { return -1; }
+    if negative { n = -n; }
+    return if n >= 0 && n <= 4 { n } else { -1 };
+}
+
 // --- leases ---------------------------------------------------------------------
 
 fn none_time() -> types::Opt<gotime::Time> { types::Opt<gotime::Time> { has: false, v: gotime::Time { .. } } }

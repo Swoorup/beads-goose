@@ -18,6 +18,7 @@ import .list;
 import .list_output;
 import .metadata;
 import .lifecycle;
+import .feedback;
 import .cli;
 import .cmd_version;
 import .cmd_create;

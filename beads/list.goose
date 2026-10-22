@@ -13,6 +13,41 @@ import .types;
 // A configured custom status and its category (types.CustomStatus).
 struct CustomStatus { name: const u8[:], category: const u8[:] }
 
+// The custom statuses a status.custom value configures: "name" or
+// "name:category", comma-separated (types.ParseCustomStatusConfig). The
+// error is beads', or "".
+fn parse_custom_statuses(value: const u8[:], out: CustomStatus[>..]&) -> u8[>..] {
+    var err = str();
+    each_split(trim(value), ',') {
+        let part = trim(it);
+        if part.len > 0 && err.len == 0 {
+            let colon = find(part, ":");
+            let name = if colon >= 0 { part[..colon] } else { part };
+            let category = if colon >= 0 { part[colon + 1..] } else { types::CATEGORY_UNSPECIFIED };
+            let known = category == types::CATEGORY_ACTIVE || category == types::CATEGORY_WIP ||
+                category == types::CATEGORY_DONE || category == types::CATEGORY_FROZEN;
+            var name_ok = name.len > 0 && name[0] >= 'a' && name[0] <= 'z';
+            for c in name { if !((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' || c == '-') { name_ok = false; } }
+            let seen = out.any() { it.name == name };
+            if colon >= 0 && category.len == 0 {
+                err = str("invalid custom status ", types::quoted(part), ": trailing colon with empty category");
+            } else if colon >= 0 && !known {
+                err = str("invalid category ", types::quoted(category), " for status ", types::quoted(name), ": must be one of active, wip, done, frozen");
+            } else if !name_ok {
+                err = str("invalid status name ", types::quoted(name), ": must match [a-z][a-z0-9_-]* (lowercase, letter-first, no spaces)");
+            } else if types::is_builtin_status(name) {
+                err = str("custom status ", types::quoted(name), " collides with built-in status");
+            } else if seen {
+                err = str("duplicate custom status name ", types::quoted(name));
+            } else {
+                out.push(CustomStatus { name: name, category: category });
+            }
+        }
+    };
+    if err.len == 0 && out.len > 50 { err = str("too many custom statuses (", out.len, "): maximum is 50"); }
+    return err;
+}
+
 // The workspace configuration the filter reads (workapi.ListConfig).
 struct Config {
     custom_statuses: const CustomStatus[:],

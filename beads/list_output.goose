@@ -246,11 +246,7 @@ fn compact_issue(out: u8[>..]&, i: const types::Issue&, b: const Blocking&) {
 // One --long entry (formatIssueLong).
 fn long_issue(out: u8[>..]&, i: const types::Issue&) {
     pin(out, i);
-    if i.status == types::STATUS_CLOSED {
-        format(out, i.id, " [P", i.priority, "] [", i.issue_type, "] ", i.status, "\n  ", i.title, "\n");
-    } else {
-        format(out, i.id, " [P", i.priority, "] [", i.issue_type, "] ", i.status, "\n  ", i.title, "\n");
-    }
+    format(out, i.id, " [P", i.priority, "] [", i.issue_type, "] ", i.status, "\n  ", i.title, "\n");
     if i.assignee.len > 0 { format(out, "  Assignee: ", i.assignee, "\n"); }
     let desc = trim(i.description);
     if desc.len > 0 {

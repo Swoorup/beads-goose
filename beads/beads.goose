@@ -14,6 +14,8 @@ import .idgen;
 import .store;
 import .markdown;
 import .templates;
+import .doltjson;
+import .rowid;
 import .graph;
 import .cli;
 import .cmd_version;

@@ -15,7 +15,9 @@ from pathlib import Path
 
 from .case import Case
 
-SHIM = Path(__file__).with_name("shim.sh")
+# Holds the recording `bd` shim. It is a checked-in executable put on PATH as is:
+# copying it per run raced with forks from parallel runs (ETXTBSY on exec).
+SHIM_DIR = Path(__file__).with_name("bin")
 
 # Directories whose contents are engine internals: only their presence is
 # compared. Everything else under the workspace is listed and, if it is small
@@ -82,14 +84,11 @@ def run_case(case: Case, impl: Path, timeout: float, keep: bool = False) -> Run:
 
 
 def _run_in(root: Path, case: Case, impl: Path, timeout: float) -> Run:
-    ws, home, log, bin_dir = (root / d for d in ("ws", "home", "log", "bin"))
-    for d in (ws, home, log, bin_dir):
+    ws, home, log = (root / d for d in ("ws", "home", "log"))
+    for d in (ws, home, log):
         d.mkdir()
     (home / ".gitconfig").write_text(GITCONFIG)
     (log / "count").write_text("0\n")
-    shim = bin_dir / "bd"
-    shutil.copyfile(SHIM, shim)
-    shim.chmod(0o755)
 
     env = {
         **BASE_ENV,
@@ -98,19 +97,26 @@ def _run_in(root: Path, case: Case, impl: Path, timeout: float) -> Run:
         "XDG_DATA_HOME": str(home / ".local/share"),
         "XDG_CACHE_HOME": str(home / ".cache"),
         "GIT_CONFIG_GLOBAL": str(home / ".gitconfig"),
-        "PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '/usr/bin:/bin')}",
+        "PATH": f"{SHIM_DIR}{os.pathsep}{os.environ.get('PATH', '/usr/bin:/bin')}",
         "BDIFF_IMPL": str(impl),
         "BDIFF_LOG": str(log),
     }
     paths = ((str(ws), "<WS>"), (str(home), "<HOME>"), (str(root), "<ROOT>"))
 
+    script = str(case.path.resolve())
     error = None
     try:
-        subprocess.run(
-            ["sh", str(case.path.resolve())],
-            cwd=ws, env=env, timeout=timeout,
-            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        p = subprocess.run(
+            ["sh", script], cwd=ws, env=env, timeout=timeout,
+            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
         )
+        # The shell's own complaints (syntax errors, a `bd` it could not run)
+        # are prefixed with the script path; bd's replayed stderr never is.
+        shell_errors = [
+            line for line in p.stderr.decode(errors="replace").splitlines()
+            if line.startswith(f"{script}:")
+        ]
+        error = "\n".join(shell_errors) or None
     except subprocess.TimeoutExpired:
         error = f"case timed out after {timeout:.0f}s"
 

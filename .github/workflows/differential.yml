@@ -37,9 +37,13 @@ jobs:
       - name: Goldens match upstream
         run: python3 tests/diff/run.py check --impl "${{ steps.upstream.outputs.bd }}" --out diff-out/upstream
 
+      # The port, like upstream, omits version --json's branch key on a
+      # detached HEAD, which is how actions/checkout leaves pull requests.
       - name: Build port
         id: port
-        run: echo "bd=$(tests/diff/build-port.sh)" >> "$GITHUB_OUTPUT"
+        run: |
+          git checkout -q -B bdiff-ci
+          echo "bd=$(tests/diff/build-port.sh)" >> "$GITHUB_OUTPUT"
 
       - name: Port matches goldens
         if: steps.port.outputs.bd != ''

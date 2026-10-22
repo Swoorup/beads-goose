@@ -43,8 +43,8 @@ bd ready --json
 
 After the script, the harness snapshots the workspace: `bd export`, a listing of
 every path with its permission bits, and the contents of every small text file.
-Database internals (`.git/`, `.beads/embeddeddolt/`, `.beads/dolt/`) appear
-only as directory entries.
+Database internals (`.git/`, `.beads/embeddeddolt/`, `.beads/dolt/`, the port's
+`.beads/goose/`) appear only as directory entries.
 
 ## Normalization
 
@@ -60,6 +60,13 @@ These become placeholders before diffing (`bdiff/normalize.py`):
 | workspace, home, temp root | `<WS>`, `<HOME>`, `<ROOT>` |
 | `"revision": "-648…"` | `"revision": "<REV>"` |
 | build field of `bd version` (`(c1c4b642a: HEAD@…)`, JSON `branch`/`build`/`commit`) | `<BUILD>` |
+
+The port keeps issues in its own store where upstream embeds Dolt, so the
+names that only say which backend holds the data are mapped to one form on
+both sides: the store directory becomes `.beads/<STORE>`, metadata.json's
+backend block and init's `Backend:` lines become `<BACKEND>`, and upstream's
+"No Dolt remote configured" advice is dropped. What is stored and printed is
+still compared as usual (`BACKEND_RULES` in `bdiff/normalize.py`).
 
 Numbered placeholders go by order of first appearance, so they still check that
 values line up: the issue created first is `<ID:1>` on both sides, and a later

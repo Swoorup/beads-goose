@@ -5,6 +5,8 @@
 import std;
 import beads from "../beads";
 import beads.sha256;
+import beads.sha1;
+import beads.idgen;
 import beads.gotime;
 import beads.gojson;
 import beads.types;
@@ -20,6 +22,19 @@ fn test_sha256() {
     var million: u8[>..] = [];
     for i in 1000000 { million.push('a'); }
     check::expect_eq(sha256::hex_digest(million), "cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0", "sha256 of a million a's");
+}
+
+fn test_sha1() {
+    var hex: u8[>..] = [];
+    sha256::format_hex(hex, sha1::digest(""));
+    check::expect_eq(hex, "da39a3ee5e6b4b0d3255bfef95601890afd80709", "sha1 of nothing");
+    hex.clear();
+    sha256::format_hex(hex, sha1::digest("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"));
+    check::expect_eq(hex, "84983e441c3bd26ebaae4aa1f95129e5e54670f1", "sha1 across two blocks");
+    // depid's own golden cases.
+    check::expect_eq(idgen::edge_id("issue-1", "issue-2"), "91990ee3-275c-59c5-9291-30f8a8732228", "edge id");
+    check::expect_eq(idgen::edge_id("mybd-7x76", "mybd-kd8a"), "c77e0366-7f45-5f8c-9f12-2c51e0a0c5fd", "edge id");
+    check::expect_eq(idgen::edge_id("a", "external:https://x/y"), "0ac7aa98-536c-5bfa-9e11-df69cc67438a", "edge id to an external ref");
 }
 
 fn rfc3339(t: gotime::Time) -> u8[>..] {
@@ -190,6 +205,7 @@ fn test_cli() {
 
 fn main() {
     test_sha256();
+    test_sha1();
     test_time();
     test_types();
     test_json_layout();

@@ -39,6 +39,35 @@ UNORDERED_HEADER = "--- unordered "
 VERSION_BUILD = re.compile(r"^(bd version \S+) \(.*\)$", re.MULTILINE)
 BUILD_FIELDS = re.compile(r'("(?:branch|build|commit)":\s*)"[^"]*"')
 
+# Backend equivalence. The port keeps issues in its own store (`.beads/goose/`,
+# `"backend": "goose"`; spec section 11.1) where upstream embeds Dolt
+# (`.beads/embeddeddolt/<db>/`). Only these names, and the lines that exist to
+# describe the backend, are mapped to a common form on both sides: what is
+# stored and printed is compared as usual.
+BACKEND_RULES: tuple[tuple[re.Pattern[str], str], ...] = tuple(
+    (re.compile(p, re.MULTILINE), r) for p, r in (
+        # bd init on an initialized workspace names the database it found.
+        (r"Found existing (?:Dolt )?database: (\S*?)/\.beads/(?:embeddeddolt/[^\s/]+|goose)$",
+         r"Found existing database: \1/.beads/<STORE>"),
+        # metadata.json's backend block.
+        (r'"database": "dolt",\n  "backend": "dolt",\n  "dolt_mode": "embedded",\n  "dolt_database": "[^"]*",',
+         r'"backend": "<BACKEND>",'),
+        (r'"database": "goose",\n  "backend": "goose",', r'"backend": "<BACKEND>",'),
+        # bd init's summary of the backend.
+        (r"^  Backend: dolt\n  Mode: embedded\n  Database: \S+\n", "  Backend: <BACKEND>\n"),
+        (r"^  Backend: goose\n", "  Backend: <BACKEND>\n"),
+        # The store directory and its gate lock.
+        (r"\.beads/(?:embeddeddolt|goose)\b", ".beads/<STORE>"),
+        # Advice about Dolt remotes, which a store without Dolt has no use for:
+        # a whole stderr block when it is all there is, else just the advice.
+        (r"^--- stderr\n\n⚠ No Dolt remote configured\n(?:  .*\n)*(?=(?:=== |\Z))", ""),
+        (r"^\n⚠ No Dolt remote configured\n(?:  .*\n)*", ""),
+    ))
+
+
+def backend_equivalence(text: str) -> str:
+    return reduce(lambda acc, rule: rule[0].sub(rule[1], acc), BACKEND_RULES, text)
+
 
 def number_by_appearance(pattern: re.Pattern[str], label: str) -> Transform:
     """Replace each distinct match with <label:n>, n = order of first appearance."""
@@ -91,6 +120,7 @@ def normalizer(run: Run, id_prefix: str, today: date) -> Transform:
         *(literal(real, ph) for real, ph in sorted(run.paths, key=lambda p: -len(p[0]))),
         lambda text: VERSION_BUILD.sub(r"\1 (<BUILD>)", text),
         lambda text: BUILD_FIELDS.sub(r'\1"<BUILD>"', text),
+        backend_equivalence,
         number_by_appearance(UUID, "UUID"),
         clock_timestamps(today),
         number_by_appearance(id_pattern, "ID"),

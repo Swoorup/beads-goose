@@ -8,7 +8,7 @@ from pathlib import Path
 from bdiff.case import Case, parse_case
 from bdiff.cli import Outcome
 from bdiff.normalize import (
-    HEX, clock_timestamps, number_by_appearance, render, sort_unordered, transcript,
+    HEX, backend_equivalence, clock_timestamps, number_by_appearance, render, sort_unordered, transcript,
 )
 from bdiff.runner import Run, Step
 
@@ -72,6 +72,20 @@ class Transcript(unittest.TestCase):
         text = render(make_run(Step(("x",), ".", 1, "", "boom")))
         self.assertIn("--- exit 1\n--- stderr\nboom\n\\ no newline at end\n", text)
         self.assertNotIn("--- stdout", text)
+
+
+class BackendEquivalence(unittest.TestCase):
+    def test_maps_both_stores_to_one_form(self):
+        dolt = ('{\n  "database": "dolt",\n  "backend": "dolt",\n  "dolt_mode": "embedded",\n'
+                '  "dolt_database": "test",\n  "project_id": "x"\n}\n.beads/embeddeddolt/\n')
+        goose = '{\n  "database": "goose",\n  "backend": "goose",\n  "project_id": "x"\n}\n.beads/goose/\n'
+        self.assertEqual(backend_equivalence(dolt), backend_equivalence(goose))
+        self.assertIn('"backend": "<BACKEND>"', backend_equivalence(goose))
+
+    def test_drops_dolt_remote_advice_only(self):
+        text = "--- stderr\n\n⚠ No Dolt remote configured\n  Run bd dolt remote add\n=== step 2 ===\n"
+        self.assertEqual(backend_equivalence(text), "=== step 2 ===\n")
+        self.assertEqual(backend_equivalence("Issue count: 3\n"), "Issue count: 3\n")
 
 
 class SortUnordered(unittest.TestCase):

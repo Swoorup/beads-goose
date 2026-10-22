@@ -1,0 +1,2 @@
+// The process edge's C (edge/sys.goose declares it).
+c_sources = ["edge/sys.c"];

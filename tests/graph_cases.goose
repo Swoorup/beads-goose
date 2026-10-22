@@ -70,21 +70,19 @@ fn test_chain() {
                          "cannot add self-dependency: t-a cannot depend on itself", "no edge to itself");
 
         var out: u8[>..] = [];
-        graph::render_tree(out, issues, graph::tree(issues, ix, 2, 50, false), 50);
+        graph::render_tree(out, issues, graph::tree(issues, ix, 2, 50, "down"), 50);
         check::expect_eq(out, "t-c: Ship release [P0] (open) \x1b[1m[BLOCKED]\x1b[m\n    └── t-b: Write migrations [P1] (open) [blocks]\n        └── t-a: Design schema [P1] (open) [blocks]\n",
                          "the tree under the chain's start");
         out.clear();
-        graph::render_tree(out, issues, graph::tree(issues, ix, 0, 50, true), 50);
+        graph::render_tree(out, issues, graph::tree(issues, ix, 0, 50, "up"), 50);
         check::expect_eq(out, "t-a: Design schema [P1] (open) \x1b[1m[BLOCKED]\x1b[m\n    └── t-b: Write migrations [P1] (open) [blocks]\n        └── t-c: Ship release [P0] (open) [blocks]\n",
                          "the tree above the chain's end, [BLOCKED] by its dependents as in beads");
         out.clear();
-        graph::render_tree(out, issues, graph::tree(issues, ix, 2, 2, false), 2);
+        graph::render_tree(out, issues, graph::tree(issues, ix, 2, 2, "down"), 2);
         check::expect_eq(out, "t-c: Ship release [P0] (open) \x1b[1m[BLOCKED]\x1b[m\n    └── t-b: Write migrations [P1] (open) [blocks]\n",
                          "a depth limit");
-        let down = graph::tree(issues, ix, 1, 50, false);
-        let up = graph::tree(issues, ix, 1, 50, true);
         out.clear();
-        graph::render_tree(out, issues, graph::merge_both(issues, down, up, 1), 50);
+        graph::render_tree(out, issues, graph::tree(issues, ix, 1, 50, "both"), 50);
         check::expect_eq(out, "t-b: Write migrations [P1] (open) \x1b[1m[BLOCKED]\x1b[m\n    ├── t-c: Ship release [P0] (open) [blocks]\n    └── t-a: Design schema [P1] (open) [blocks]\n",
                          "both ways");
     };

@@ -413,19 +413,19 @@ fn links(issues: const Issue[:], ix: Index&, up: bool) -> Link[>..], i64[>..] {
     return ls, first;
 }
 
-// The tree under the issue at `root`, walking what it depends on (or what
-// depends on it, going up) depth first, to depths below max_depth. Each issue
-// appears once, under the first path to reach it, so a cycle ends the
-// descent; relates-to edges are not followed.
-fn tree(issues: const Issue[:], ix: Index&, root: i64, max_depth: i64, up: bool) -> TreeNode[>..] {
-    var nodes: TreeNode[>..] = [];
-    guard max_depth > 0 else { return nodes; }
+// Walks the tree under the issue at `root` onto `out`, following what it
+// depends on (or what depends on it, going up) depth first, to depths below
+// max_depth. Each issue appears once, under the first path to reach it, so
+// a cycle ends the descent; relates-to edges are not followed. The root
+// itself is left out when asked.
+fn walk(issues: const Issue[:], ix: Index&, root: i64, max_depth: i64, up: bool, with_root: bool, out: TreeNode[>..]&) {
+    guard max_depth > 0 else { return; }
     let ls, first = links(issues, ix, up);
     var seen: bool[>..] = [];
     seen.push_n(false, issues.len);
     var path: Frame[>..<] = [];
     seen[root] = true;
-    nodes.push(TreeNode { root, 0, "", "" });
+    if with_root { out.push(TreeNode { root, 0, "", "" }); }
     path.push(Frame { root, first[root] });
     while path.len > 0 {
         let top = path.len - 1;
@@ -435,15 +435,26 @@ fn tree(issues: const Issue[:], ix: Index&, root: i64, max_depth: i64, up: bool)
         let next = ls[k].to;
         guard path.len < max_depth && !seen[next] else { continue; }
         seen[next] = true;
-        nodes.push(TreeNode { next, path.len, issues[path[top].node].id, ls[k].dep_type });
+        out.push(TreeNode { next, path.len, issues[path[top].node].id, ls[k].dep_type });
         path.push(Frame { next, first[next] });
     }
-    return nodes;
 }
 
-// The nodes in `status`, with the nodes on the way down to them; the rest
-// are dropped.
-fn prune(issues: const Issue[:], nodes: const TreeNode[:], status: const u8[:]) -> TreeNode[>..] {
+// The dependency tree around the issue at `root`, as `bd dep tree` walks
+// it: "down" through what it depends on, "up" through what depends on it,
+// or "both", which is the issues above it (all but the root) and then the
+// tree below. With a status, only the nodes in it are kept, with the nodes
+// on the way down to them.
+fn tree(issues: const Issue[:], ix: Index&, root: i64, max_depth: i64, direction: const u8[:],
+        status: const u8[:] = "") -> TreeNode[>..] {
+    var nodes: TreeNode[>..] = [];
+    if direction == "both" {
+        walk(issues, ix, root, max_depth, true, false, nodes);
+        walk(issues, ix, root, max_depth, false, true, nodes);
+    } else {
+        walk(issues, ix, root, max_depth, direction == "up", true, nodes);
+    }
+    guard status.len > 0 else { return nodes; }
     var at = dictionary<const u8[:], i64> {};
     for n, k in nodes { at.insert(issues[n.pos].id, k); }
     var keep: bool[>..] = [];
@@ -459,18 +470,9 @@ fn prune(issues: const Issue[:], nodes: const TreeNode[:], status: const u8[:]) 
             p = nodes[q].parent;
         }
     }
-    var out: TreeNode[>..] = [];
-    for n, k in nodes { if keep[k] { out.push(n); } }
-    return out;
-}
-
-// The full graph around a root: the issues above it (all but the root
-// itself), then the tree below it, as `bd dep tree --direction both` shows.
-fn merge_both(issues: const Issue[:], down: const TreeNode[:], upward: const TreeNode[:], root: i64) -> TreeNode[>..] {
-    var out: TreeNode[>..] = [];
-    for n in upward { if n.pos != root { out.push(n); } }
-    for n in down { out.push(n); }
-    return out;
+    var kept: TreeNode[>..] = [];
+    for n, k in nodes { if keep[k] { kept.push(TreeNode { n.pos, n.depth, n.parent, n.edge }); } }
+    return kept;
 }
 
 // The bold beads puts on a root's [READY] or [BLOCKED]. Its renderer emits

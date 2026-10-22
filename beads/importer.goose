@@ -79,9 +79,9 @@ fn parse(text: const u8[:], a: types::Arena&, records: Record[>..]&, memories: M
         // The members bd peeks at before reading the record; the last of a
         // repeated key is the one a map keeps.
         var header = false;
-        var type_raw: const u8[:] = "";
-        var plane_raw: const u8[:] = "";
-        var wisp_raw: const u8[:] = "";
+        var type_raw = line[0..0];
+        var plane_raw = line[0..0];
+        var wisp_raw = line[0..0];
         if kind == "object" {
             var r = json::reader(line);
             json::each_member(r) { k =>
@@ -353,13 +353,12 @@ fn aux_time(out: u8[>..]&, t: gotime::Time) {
 }
 
 // An edge of the graph as the import builds it, chained per source issue:
-// where its record is (a stored issue's edge, a written row's, or one wired
-// in and kept in the arena), and its ends and type for the checks.
+// where its record is (a stored issue's edge, or one wired in and kept in
+// the arena), and its ends and type for the checks.
 struct Edge { from: i64, at: i64, k: i64, next: i64, issue_id: const u8[:], depends_on_id: const u8[:], dep_type: const u8[:] }
 
 let IN_LOCAL = 0;
-let IN_ROW = 1;
-let IN_ARENA = 2;
+let IN_ARENA = 1;
 
 // Imports the records over the stored issues: the issues to write go to
 // out.upserts, whole, with their labels, comments and dependencies merged
@@ -377,22 +376,23 @@ fn apply(records: const Record[:], local: const Issue[:], opts: const Options&, 
     let kept, new_count = classify(records, keep, local, opts.allow_stale, false, out);
 
     var ix = graph::index(local);
-    var by_id = dictionary<const u8[:], i64> {};          // upsert position by id
+    var by_id = dictionary<const u8[:], i64> {};          // row position by id
+    var rows: Record[>..] = [];                           // the issues to write
     var accepted: bool[>..] = [];
     accepted.push_n(false, records.len);
     for k in kept {
         let prepared, why = prepare(records[k].issue, opts);
         if why.len > 0 { return t, why; }
         var incoming = stored_times(prepared);
-        incoming.metadata = stored_metadata(prepared.metadata, out.text);
+        incoming.metadata = stored_metadata(prepared.metadata, a.text);
         let at = graph::lookup(ix, incoming.id);
         let prior = graph::lookup(by_id, incoming.id);
         // The row as stored before this one: an earlier row of this import,
         // else the database's.
         let has_stored = prior >= 0 || at >= 0;
-        let stored = if prior >= 0 { out.upserts[prior].issue } else if at >= 0 { local[at] } else { incoming };
+        let stored = if prior >= 0 { rows[prior].issue } else if at >= 0 { local[at] } else { incoming };
         if has_stored && !opts.allow_stale && gotime::before(incoming.updated_at, stored.updated_at) {
-            out.stale.push(incoming.id);
+            out.stale.push(records[k].issue.id);
             continue;
         }
         var row = incoming;
@@ -430,15 +430,14 @@ fn apply(records: const Record[:], local: const Issue[:], opts: const Options&, 
             if same { continue; }
             var id = c.id;
             if id.len == 0 {
-                let stamp_start = out.text.len;
-                aux_time(out.text, when);
-                let stamp = out.text[stamp_start..];
+                var stamp: u8[>..] = [];
+                aux_time(stamp, when);
                 let derived = rowid::comment_id(incoming.id, c.author, c.text, stamp);
-                let id_start = out.text.len;
-                out.text.append(derived);
-                id = out.text[id_start..];
+                let id_start = a.text.len;
+                a.text.append(derived);
+                id = a.text[id_start..];
             }
-            a.comments.push(types::Comment { id: id, issue_id: incoming.id, author: c.author, text: c.text, created_at: when });
+            a.comments.push(types::Comment { id: id, issue_id: records[k].issue.id, author: c.author, text: c.text, created_at: when });
             if !any_comment || when.unix > latest { latest = when.unix; }
             any_comment = true;
         }
@@ -446,15 +445,16 @@ fn apply(records: const Record[:], local: const Issue[:], opts: const Options&, 
         row.dependencies = if has_stored { stored.dependencies } else { records[k].issue.dependencies[0..0] };
 
         if prior >= 0 {
-            out.upserts[prior] = Record { issue: row, wisp_plane: records[k].wisp_plane };
+            rows[prior] = Record { issue: row, wisp_plane: records[k].wisp_plane };
         } else {
-            by_id.insert(incoming.id, out.upserts.len);
-            out.upserts.push(Record { issue: row, wisp_plane: records[k].wisp_plane });
-            out.ids.push(incoming.id);
+            by_id.insert(incoming.id, rows.len);
+            rows.push(Record { issue: row, wisp_plane: records[k].wisp_plane });
+            out.ids.push(records[k].issue.id);
         }
         // The incoming edges are wired once every row is in.
         accepted[k] = true;
     }
+    for r in rows { out.upserts.push(r); }
     wire(records, accepted, local, ix, by_id, opts, a, out);
     t.created = out.ids.len;
     t.updated = out.updated.len;
@@ -475,11 +475,9 @@ fn wire(records: const Record[:], accepted: const bool[:], local: const Issue[:]
         head.insert(d.issue_id, edges.len);
         edges.push(Edge { from, at, k, h, d.issue_id, d.depends_on_id, d.dep_type });
     }
-    for i, n in local {
-        if graph::lookup(by_id, i.id) >= 0 { continue; }
-        for d, k in i.dependencies { link(IN_LOCAL, n, k, d); }
-    }
-    for r, n in out.upserts { for d, k in r.issue.dependencies { link(IN_ROW, n, k, d); } }
+    // A written row keeps the edges its stored issue had, so every stored
+    // edge is in the graph from the start.
+    for i, n in local { for d, k in i.dependencies { link(IN_LOCAL, n, k, d); } }
 
     fn exists(id: const u8[:]) -> bool { graph::lookup(ix, id) >= 0 || graph::lookup(by_id, id) >= 0 }
     fn has_edge(from: const u8[:], to: const u8[:]) -> bool {
@@ -517,9 +515,9 @@ fn wire(records: const Record[:], accepted: const bool[:], local: const Issue[:]
         let line = str(from, " -> ", to, ": ", why);
         let seen = out.skipped_deps.any() { it == line };
         if seen { return; }
-        let start = out.text.len;
-        out.text.append(line);
-        out.skipped_deps.push(out.text[start..]);
+        let start = a.text.len;
+        a.text.append(line);
+        out.skipped_deps.push(a.text[start..]);
     }
     fn why_not(from: const u8[:], to: const u8[:], dep_type: const u8[:]) -> u8[>..] {
         let external = starts_with(to, "external:") || prefix(from) != prefix(to);
@@ -558,9 +556,9 @@ fn wire(records: const Record[:], accepted: const bool[:], local: const Issue[:]
                 }
                 var normal: u8[>..] = [];
                 if d.metadata.len == 0 || !doltjson::mysql_text(normal, d.metadata) { normal.clear(); normal.append("{}"); }
-                let start = out.text.len;
-                out.text.append(normal);
-                let metadata = out.text[start..];
+                let start = a.text.len;
+                a.text.append(normal);
+                let metadata = a.text[start..];
                 let made = types::Dependency {
                     id: "",
                     issue_id: from,
@@ -584,7 +582,6 @@ fn wire(records: const Record[:], accepted: const bool[:], local: const Issue[:]
     fn dep_of(e: i64) -> types::Dependency {
         let x = edges[e];
         if x.from == IN_LOCAL { return local[x.at].dependencies[x.k]; }
-        if x.from == IN_ROW { return out.upserts[x.at].issue.dependencies[x.k]; }
         return a.deps[x.k];
     }
     var chain: i64[>..] = [];

@@ -25,4 +25,7 @@ import .cmd_create;
 import .cmd_show;
 import .cmd_export;
 import .cmd_init;
+import .cmd_dep;
+import .cmd_ready;
+import .cmd_import;
 import .dispatch;

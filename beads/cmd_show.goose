@@ -10,6 +10,7 @@ import .flags;
 import .types;
 import .issue_json;
 import .store;
+import .idgen;
 import .markdown;
 import .cli;
 
@@ -32,25 +33,31 @@ let SHOW_FLAGS = [
 let SHOW_UNSUPPORTED = ["thread", "long", "refs", "children", "as-of", "watch", "current", "brief-deps"];
 
 // An edge as one of its ends sees it: the issue at the other end (its
-// position in the store) and the edge's type.
-struct Link { at: i64, dep_type: const u8[:] }
+// position in the store), the edge's type, and the edge's ID.
+struct Link { at: i64, dep_type: const u8[:], key: u8[16] }
 
-// The issues issue i depends on, in the order its edges were added. Edges
-// to issues the store does not hold (external references) are left out.
+// Links in the order bd show lists them: by edge ID, the order Dolt keeps
+// them in.
+fn by_edge_id(links: Link[>..]&) { sort(links) { a, b => compare(a.key[..], b.key[..]) < 0 }; }
+
+// The issues issue i depends on. Edges to issues the store does not hold
+// (external references) are left out.
 fn links_out(s: const store::Store&, i: const types::Issue&, out: Link[>..]&) {
     for d in i.dependencies {
         let at = store::index_of(s, d.depends_on_id);
-        if at >= 0 { out.push(Link { at: at, dep_type: d.dep_type }); }
+        if at >= 0 { out.push(Link { at: at, dep_type: d.dep_type, key: idgen::edge_key(i.id, d.depends_on_id) }); }
     }
+    by_edge_id(out);
 }
 
 // The issues that depend on the issue with this ID.
 fn links_in(s: const store::Store&, id: const u8[:], out: Link[>..]&) {
     for other, at in s.issues {
         for d in other.dependencies {
-            if d.depends_on_id == id { out.push(Link { at: at, dep_type: d.dep_type }); }
+            if d.depends_on_id == id { out.push(Link { at: at, dep_type: d.dep_type, key: idgen::edge_key(other.id, id) }); }
         }
     }
+    by_edge_id(out);
 }
 
 fn has_type(links: const Link[:], t: const u8[:]) -> bool {
@@ -180,7 +187,7 @@ fn metadata_section(out: u8[>..]&, text: const u8[:]) {
         return;
     }
     guard entries.len > 0 else { return; }
-    sort(entries) { a, b => compare(a.key, b.key) < 0 };
+    sort(entries) { a, b => compare(a.key[..], b.key[..]) < 0 };
     out.append("\nMETADATA\n");
     for e in entries { format(out, "  ", e.key, ": ", values[e.start..e.end], "\n"); }
 }
@@ -270,8 +277,8 @@ fn show_issue_text(c: Ctx&, i: const types::Issue&) {
         var kinds: (const u8[:])[>..] = [];
         for t in SECTION_ORDER { if has_type(links, t) { kinds.push(t); } }
         var custom: (const u8[:])[>..] = [];
-        for l in links {
-            let t = l.dep_type;
+        for k in links.len {
+            let t = links[k].dep_type;
             if !contains(SECTION_ORDER, t) && t != types::DEP_RELATED && t != types::DEP_RELATES_TO && !contains(custom, t) { custom.push(t); }
         }
         sort(custom) { a, b => compare(a, b) < 0 };

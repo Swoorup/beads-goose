@@ -302,7 +302,15 @@ fn stored(i: types::Issue) -> types::Issue {
 
 // Appends the issue's record, as `stored` keeps it.
 fn put_issue(log: u8[>..]&, i: types::Issue) {
-    let s = stored(i);
+    var s = stored(i);
+    // Edges in the order export lists them (Dolt's ORDER BY depends_on_id, type).
+    var deps: types::Dependency[>..] = [];
+    for d in s.dependencies { deps.push(d); }
+    sort(deps) { a, b =>
+        let by = compare(a.depends_on_id, b.depends_on_id);
+        by < 0 || (by == 0 && compare(a.dep_type, b.dep_type) < 0)
+    };
+    s.dependencies = deps;
     var o = gojson::object(log);
     gojson::string_field(o, "_type", "issue");
     types::issue_fields(o, s);

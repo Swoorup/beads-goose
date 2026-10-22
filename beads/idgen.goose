@@ -9,6 +9,7 @@ namespace idgen;
 import std;
 import math;
 import .sha256;
+import .sha1;
 
 let BASE36 = "0123456789abcdefghijklmnopqrstuvwxyz";
 
@@ -66,4 +67,37 @@ fn adaptive_length(n: i64, lo: i64 = MIN_LENGTH, hi: i64 = MAX_LENGTH, prob: f64
         if p <= prob { return length; }
     }
     return hi;
+}
+
+// The namespace of beads' dependency edge IDs (internal/storage/depid).
+let EDGE_NAMESPACE: u8[16] = [0xbd, 0xd7, 0x4e, 0xb9, 0xa2, 0x0a, 0x55, 0x4a,
+                              0x98, 0x5b, 0x54, 0xb8, 0xf3, 0xe6, 0x4d, 0x8b];
+
+// The ID beads gives the edge from an issue to its target, as bytes: a
+// version 5 UUID of the two joined by a unit separator, so the same edge has
+// the same ID in every clone. Dolt keeps edges in this order, and bd show
+// lists them in it.
+fn edge_key(issue_id: const u8[:], target: const u8[:]) -> u8[16] {
+    var name: u8[>..] = [];
+    name.append(EDGE_NAMESPACE[..]);
+    format(name, issue_id, "\x1f", target);
+    let d = sha1::digest(name);
+    var b: u8[16] = [0; 16];
+    for k in 16 { b[k] = d[k]; }
+    b[6] = (b[6] & 0x0f) | 0x50;
+    b[8] = (b[8] & 0x3f) | 0x80;
+    return b;
+}
+
+// The edge's ID in its text form.
+fn edge_id(issue_id: const u8[:], target: const u8[:]) -> u8[>..] {
+    let b = edge_key(issue_id, target);
+    var out: u8[>..] = [];
+    let hex = "0123456789abcdef";
+    for k in 16 {
+        if k == 4 || k == 6 || k == 8 || k == 10 { out.push('-'); }
+        out.push(hex[(b[k] >> 4) as i64]);
+        out.push(hex[(b[k] & 0x0f) as i64]);
+    }
+    return out;
 }

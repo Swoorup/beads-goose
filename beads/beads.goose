@@ -4,6 +4,7 @@
 // beads.types.
 
 import .sha256;
+import .sha1;
 import .gotime;
 import .gojson;
 import .types;

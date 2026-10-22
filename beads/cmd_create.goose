@@ -96,7 +96,7 @@ fn parse_priority(text: const u8[:]) -> i64 {
     let start = i;
     var n = 0;
     while i < s.len && s[i] >= '0' && s[i] <= '9' && n < 1000 {
-        n = n * 10 + (s[i] - '0') as i64;
+        n = n * 10 + (s[i] - '0');
         i++;
     }
     guard i > start else { return -1; }
@@ -242,7 +242,7 @@ fn mint_id(s: const store::Store&, prefix: const u8[:], title: const u8[:], desc
     var top = 0;
     for i in s.issues { if starts_with(i.id, head) && find(i.id[head.len..], ".") < 0 { top++; } }
     let base = min(idgen::adaptive_length(top), idgen::MAX_LENGTH);
-    let nano = created.unix * 1000000000 + created.nsec as i64;
+    let nano = created.unix * 1000000000 + created.nsec;
     for length in base..idgen::MAX_LENGTH + 1 {
         for nonce in 10 {
             let candidate = idgen::hash_id(prefix, title, description, creator, nano, length, nonce);
@@ -480,12 +480,12 @@ fn create_command(c: Ctx&) -> i64 {
     // points from.
     if parent_id.len > 0 {
         deps.push(types::Dependency { issue_id: id, depends_on_id: parent_id, dep_type: types::DEP_PARENT_CHILD,
-                                      created_at: store::second(now), created_by: who, .. });
+                                      created_at: store::second(now), created_by: who, metadata: "{}", .. });
     }
     for spec, k in specs {
         if !spec.reverse {
             deps.push(types::Dependency { issue_id: id, depends_on_id: targets[k], dep_type: spec.dep_type,
-                                          created_at: store::second(now), created_by: who, .. });
+                                          created_at: store::second(now), created_by: who, metadata: "{}", .. });
         }
     }
     issue.dependencies = deps;
@@ -503,7 +503,7 @@ fn create_command(c: Ctx&) -> i64 {
             var edges: types::Dependency[>..] = [];
             for e in other.dependencies { edges.push(e); }
             edges.push(types::Dependency { issue_id: other.id, depends_on_id: id, dep_type: types::DEP_BLOCKS,
-                                           created_at: store::second(now), created_by: who, .. });
+                                           created_at: store::second(now), created_by: who, metadata: "{}", .. });
             other.dependencies = edges;
             store::put_issue(c.log, other);
         }

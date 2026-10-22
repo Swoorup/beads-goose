@@ -135,6 +135,15 @@ int64_t bd_sys_kind(bd_slice path) {
 
 uint8_t bd_sys_isatty(int64_t fd) { return isatty((int)fd) == 1; }
 
+/* Whether standard input comes from a pipe or a file rather than a terminal
+   or a device such as /dev/null: what Go reads as a mode without
+   os.ModeCharDevice. */
+uint8_t bd_sys_stdin_redirected(void) {
+    struct stat st;
+    if (fstat(0, &st) != 0) return 0;
+    return !S_ISCHR(st.st_mode);
+}
+
 /* Runs a program found on PATH. argv holds the arguments, each ended by a
    NUL byte; dir, if not empty, is the working directory to run it in.
    Its stdout and stderr are appended to out and err; stdin is /dev/null.

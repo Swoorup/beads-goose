@@ -1,0 +1,1128 @@
+=== step 1 ===
+$ bd init --prefix test --skip-agents --skip-hooks --quiet
+--- exit 0
+=== step 2 ===
+$ bd create Alpha --id <ID:1> -p 1 -l x,y --silent
+--- exit 0
+--- stdout
+<ID:1>
+=== step 3 ===
+$ bd create Beta --id <ID:2> -p 2 -l z --silent
+--- exit 0
+--- stdout
+<ID:2>
+=== step 4 ===
+$ bd create Gamma --id <ID:3> -p 0 -t epic --silent
+--- exit 0
+--- stdout
+<ID:3>
+=== step 5 ===
+$ bd create Delta --id <ID:4> -p 3 --silent
+--- exit 0
+--- stdout
+<ID:4>
+=== step 6 ===
+$ bd dep
+--- exit 0
+--- stdout
+Manage dependencies between issues.
+
+When called with an issue ID and --blocks flag, creates a blocking dependency:
+  bd dep <blocker-id> --blocks <blocked-id>
+
+This is equivalent to:
+  bd dep add <blocked-id> <blocker-id>
+
+Examples:
+  bd dep bd-xyz --blocks bd-abc    # bd-xyz blocks bd-abc
+  bd dep add bd-abc bd-xyz         # Same as above (bd-abc depends on bd-xyz)
+
+Usage:
+  bd dep [issue-id] [flags]
+  bd dep [command]
+
+Available Commands:
+  add         Add a dependency
+  cycles      Detect dependency cycles
+  list        List dependencies or dependents of one or more issues
+  relate      Create a bidirectional relates_to link between issues
+  remove      Remove a dependency
+  tree        Show dependency tree
+  unrelate    Remove a relates_to link between issues
+
+Flags:
+  -b, --blocks string    Issue ID that this issue blocks (shorthand for: bd dep add <blocked> <blocker>)
+  -h, --help             help for dep
+      --no-cycle-check   Skip per-edge cycle checks for speed (bulk wiring); bulk --file adds still run one final whole-graph check before commit
+
+Global Flags:
+      --actor string              Actor name for audit trail (default: $BEADS_ACTOR, git user.name, $USER)
+      --cpu-profile               Generate CPU profile for performance analysis
+      --database string           Run against a different server database for this invocation, without changing the project's configured database (proxied-server mode only)
+      --db string                 Database path (default: auto-discover .beads/*.db). In proxied-server mode, a value that isn't an existing path is treated as a database name override (see --database)
+  -C, --directory string          Change to this directory before running the command (like git -C)
+      --dolt-auto-commit string   Dolt auto-commit policy (off|on|batch). 'on': commit after each write. 'batch': defer commits to bd dolt commit; uncommitted changes persist in the working set until then (a live batch-mode bd process also flushes on SIGTERM/SIGHUP). Applies to embedded and direct SQL-server modes; proxied-server routes are unaffected. Default: on. Override via config key dolt.auto-commit
+      --global                    Use the global shared-server database (beads_global)
+      --ignore-schema-skew        Proceed despite forward schema drift (some queries may fail)
+      --json                      Output in JSON format
+      --mem-profile string        Write heap profile to FILE on exit (also respects BEADS_MEM_PROFILE)
+      --no-color                  Disable color output (also: NO_COLOR=1 or CLICOLOR=0)
+  -q, --quiet                     Suppress non-essential output (errors only)
+      --readonly                  Read-only mode: block write operations (for worker sandboxes)
+      --sandbox                   Sandbox mode: disables Dolt auto-push
+  -v, --verbose                   Enable verbose/debug output
+
+Use "bd dep [command] --help" for more information about a command.
+=== step 7 ===
+$ bd dep add
+--- exit 1
+--- stderr
+Error: requires 2 arg(s), only received 0 (or use --blocked-by/--depends-on flag)
+=== step 8 ===
+$ bd dep add <ID:1>
+--- exit 1
+--- stderr
+Error: requires 2 arg(s), only received 1 (or use --blocked-by/--depends-on flag)
+=== step 9 ===
+$ bd dep add <ID:1> <ID:2> <ID:3>
+--- exit 1
+--- stderr
+Error: requires 2 arg(s), only received 3 (or use --blocked-by/--depends-on flag)
+=== step 10 ===
+$ bd dep add <ID:1> nope
+--- exit 1
+--- stderr
+Error: resolving dependency ID nope: resolving issue ID nope: no issue found matching "nope"
+=== step 11 ===
+$ bd dep add nope <ID:1>
+--- exit 1
+--- stderr
+Error: resolving issue ID nope: no issue found matching "nope"
+=== step 12 ===
+$ bd dep add <ID:1> <ID:1>
+--- exit 1
+--- stderr
+Error: cannot add self-dependency: <ID:1> cannot depend on itself
+=== step 13 ===
+$ bd dep add <ID:1> <ID:2> -t bogus
+--- exit 1
+--- stderr
+Error: unknown dependency type "bogus"; valid types: approved-by, assigned-to, attests, authored-by, blocked-by, blocks, caused-by, conditional-blocks, delegated-from, depends-on, discovered-from, duplicates, parent-child, related, relates-to, replies-to, supersedes, tracks, until, validates, waits-for
+=== step 14 ===
+$ bd dep add <ID:1> <ID:2> -t depends-on
+--- exit 0
+--- stdout
+✓ Added dependency: <ID:1> (Alpha) depends on <ID:2> (Beta) (blocks)
+=== step 15 ===
+$ bd dep add <ID:1> <ID:2> -t related
+--- exit 1
+--- stderr
+Error: dependency <ID:1> -> <ID:2> already exists with type "blocks" (requested "related"); remove it first with 'bd dep remove' then re-add
+=== step 16 ===
+$ bd dep add <ID:1> <ID:2> --json
+--- exit 0
+--- stdout
+{
+  "depends_on_id": "<ID:2>",
+  "issue_id": "<ID:1>",
+  "schema_version": 1,
+  "status": "added",
+  "type": "blocks"
+}
+=== step 17 ===
+$ bd dep add <ID:2> other-xyz
+--- exit 0
+--- stdout
+✓ Added dependency: <ID:2> (Beta) depends on other-xyz (blocks)
+=== step 18 ===
+$ bd dep add <ID:2> external:proj:cap
+--- exit 0
+--- stdout
+✓ Added dependency: <ID:2> (Beta) depends on external:proj:cap (blocks)
+=== step 19 ===
+$ bd dep add <ID:2> external:proj
+--- exit 1
+--- stderr
+Error: invalid external reference format: expected 'external:<project>:<capability>', got 'external:proj'
+=== step 20 ===
+$ bd dep add <ID:3> <ID:1> -t parent-child --json
+--- exit 0
+--- stdout
+{
+  "depends_on_id": "<ID:1>",
+  "issue_id": "<ID:3>",
+  "schema_version": 1,
+  "status": "added",
+  "type": "parent-child"
+}
+=== step 21 ===
+$ bd dep <ID:3> --blocks <ID:2>
+--- exit 1
+--- stderr
+Error: adding dependency would create a cycle
+=== step 22 ===
+$ bd dep <ID:3> --blocks <ID:2> --json
+--- exit 1
+--- stdout
+{
+  "error": "adding dependency would create a cycle",
+  "schema_version": 1
+}
+=== step 23 ===
+$ bd dep --blocks <ID:2>
+--- exit 1
+--- stderr
+Error: --blocks requires exactly one issue ID argument
+=== step 24 ===
+$ bd dep list <ID:1>
+--- exit 0
+--- stdout
+  <ID:2>: Beta [P2] (open) via blocks
+
+=== step 25 ===
+$ bd dep list <ID:1> --json
+--- exit 0
+--- stdout
+[
+  {
+    "id": "<ID:2>",
+    "title": "Beta",
+    "status": "open",
+    "priority": 2,
+    "issue_type": "task",
+    "owner": "tester@example.com",
+    "created_at": "<DATE>T<TIME>Z",
+    "created_by": "tester",
+    "updated_at": "<DATE>T<TIME>Z",
+    "labels": [
+      "z"
+    ],
+    "dependency_type": "blocks"
+  }
+]
+=== step 26 ===
+$ bd dep list <ID:2> --direction up
+--- exit 0
+--- stdout
+  <ID:1>: Alpha [P1] (open) via blocks
+
+=== step 27 ===
+$ bd dep list <ID:3> --direction up --json
+--- exit 0
+--- stdout
+[]
+=== step 28 ===
+$ bd dep list <ID:1> <ID:2>
+--- exit 0
+--- stdout
+
+📋 Dependencies of <ID:1>:
+
+  <ID:2> via blocks
+
+📋 Dependencies of <ID:2>:
+
+  external:proj:cap via blocks
+  other-xyz via blocks
+
+=== step 29 ===
+$ bd dep list <ID:1> <ID:2> --json
+--- exit 0
+--- stdout
+[
+  {
+    "issue_id": "<ID:1>",
+    "depends_on_id": "<ID:2>",
+    "type": "blocks",
+    "created_at": "<DATE>T<TIME>Z",
+    "created_by": "tester",
+    "metadata": "{}"
+  },
+  {
+    "issue_id": "<ID:2>",
+    "depends_on_id": "external:proj:cap",
+    "type": "blocks",
+    "created_at": "<DATE>T<TIME>Z",
+    "created_by": "tester",
+    "metadata": "{}"
+  },
+  {
+    "issue_id": "<ID:2>",
+    "depends_on_id": "other-xyz",
+    "type": "blocks",
+    "created_at": "<DATE>T<TIME>Z",
+    "created_by": "tester",
+    "metadata": "{}"
+  }
+]
+=== step 30 ===
+$ bd dep list nope
+--- exit 1
+--- stderr
+Error: resolving nope: no issue found matching "nope"
+=== step 31 ===
+$ bd dep list <ID:3>
+--- exit 0
+--- stdout
+  <ID:1>: Alpha [P1] (open) via parent-child
+
+=== step 32 ===
+$ bd dep tree <ID:2>
+--- exit 0
+--- stdout
+
+🌲 Dependency tree for <ID:2>:
+
+<ID:2>: Beta [P2] (open) [READY]
+
+=== step 33 ===
+$ bd dep tree <ID:1> --direction up
+--- exit 0
+--- stdout
+
+🌲 Dependent tree for <ID:1>:
+
+<ID:1>: Alpha [P1] (open) [READY]
+    └── <ID:3>: Gamma [P0] (open) [parent-child]
+
+=== step 34 ===
+$ bd dep tree <ID:1> --direction both
+--- exit 0
+--- stdout
+
+🌲 Full dependency graph for <ID:1>:
+
+<ID:1>: Alpha [P1] (open) [BLOCKED]
+    ├── <ID:3>: Gamma [P0] (open) [parent-child]
+    └── <ID:2>: Beta [P2] (open) [blocks]
+
+=== step 35 ===
+$ bd dep tree <ID:3>
+--- exit 0
+--- stdout
+
+🌲 Dependency tree for <ID:3>:
+
+<ID:3>: Gamma [P0] (open) [READY]
+    └── <ID:1>: Alpha [P1] (open) [parent-child]
+        └── <ID:2>: Beta [P2] (open) [blocks]
+
+=== step 36 ===
+$ bd dep tree <ID:1> --json
+--- exit 0
+--- stdout
+[
+  {
+    "id": "<ID:1>",
+    "title": "Alpha",
+    "status": "open",
+    "priority": 1,
+    "issue_type": "task",
+    "owner": "tester@example.com",
+    "created_at": "<DATE>T<TIME>Z",
+    "created_by": "tester",
+    "updated_at": "<DATE>T<TIME>Z",
+    "labels": [
+      "x",
+      "y"
+    ],
+    "depth": 0,
+    "parent_id": "",
+    "truncated": false
+  },
+  {
+    "id": "<ID:2>",
+    "title": "Beta",
+    "status": "open",
+    "priority": 2,
+    "issue_type": "task",
+    "owner": "tester@example.com",
+    "created_at": "<DATE>T<TIME>Z",
+    "created_by": "tester",
+    "updated_at": "<DATE>T<TIME>Z",
+    "labels": [
+      "z"
+    ],
+    "depth": 1,
+    "parent_id": "<ID:1>",
+    "edge_from_parent": "blocks",
+    "truncated": false
+  }
+]
+=== step 37 ===
+$ bd dep tree <ID:2> --max-depth 1
+--- exit 0
+--- stdout
+
+🌲 Dependency tree for <ID:2>:
+
+<ID:2>: Beta [P2] (open) [READY]
+
+=== step 38 ===
+$ bd dep tree <ID:2> --direction sideways
+--- exit 1
+--- stderr
+Error: --direction must be 'down', 'up', or 'both'
+=== step 39 ===
+$ bd dep cycles --json
+--- exit 0
+--- stdout
+[]
+=== step 40 ===
+$ bd dep remove <ID:1> <ID:2>
+--- exit 0
+--- stdout
+✓ Removed dependency: <ID:1> (Alpha) → <ID:2> (Beta)
+=== step 41 ===
+$ bd dep remove <ID:1> <ID:2> --json
+--- exit 0
+--- stdout
+{
+  "depends_on_id": "<ID:2>",
+  "issue_id": "<ID:1>",
+  "schema_version": 1,
+  "status": "removed"
+}
+=== step 42 ===
+$ bd dep rm <ID:2> <ID:3>
+--- exit 0
+--- stdout
+✓ Removed dependency: <ID:2> (Beta) → <ID:3> (Gamma)
+=== step 43 ===
+$ bd dep add <ID:3> <ID:2>
+--- exit 0
+--- stdout
+✓ Added dependency: <ID:3> (Gamma) depends on <ID:2> (Beta) (blocks)
+=== step 44 ===
+$ bd dep add <ID:2> <ID:3> --no-cycle-check
+--- exit 1
+--- stderr
+Error: adding dependency would create a cycle
+=== step 45 ===
+$ bd dep cycles
+--- exit 0
+--- stdout
+
+✓ No dependency cycles detected
+
+=== step 46 ===
+$ bd dep cycles --json
+--- exit 0
+--- stdout
+[]
+=== step 47 ===
+$ bd dep add <ID:3> <ID:1>
+--- exit 1
+--- stderr
+Error: <ID:3> cannot be blocked by its ancestor <ID:1>: <ID:1> cannot close until its descendants finish, so the gate would never clear
+=== step 48 ===
+$ bd dep add <ID:1> <ID:2>
+--- exit 0
+--- stdout
+✓ Added dependency: <ID:1> (Alpha) depends on <ID:2> (Beta) (blocks)
+=== step 49 ===
+$ bd dep list <ID:1> --json
+--- exit 0
+--- stdout
+[
+  {
+    "id": "<ID:2>",
+    "title": "Beta",
+    "status": "open",
+    "priority": 2,
+    "issue_type": "task",
+    "owner": "tester@example.com",
+    "created_at": "<DATE>T<TIME>Z",
+    "created_by": "tester",
+    "updated_at": "<DATE>T<TIME>Z",
+    "labels": [
+      "z"
+    ],
+    "dependency_type": "blocks"
+  }
+]
+=== step 50 ===
+$ bd dep tree <ID:1> --json
+--- exit 0
+--- stdout
+[
+  {
+    "id": "<ID:1>",
+    "title": "Alpha",
+    "status": "open",
+    "priority": 1,
+    "issue_type": "task",
+    "owner": "tester@example.com",
+    "created_at": "<DATE>T<TIME>Z",
+    "created_by": "tester",
+    "updated_at": "<DATE>T<TIME>Z",
+    "labels": [
+      "x",
+      "y"
+    ],
+    "depth": 0,
+    "parent_id": "",
+    "truncated": false
+  },
+  {
+    "id": "<ID:2>",
+    "title": "Beta",
+    "status": "open",
+    "priority": 2,
+    "issue_type": "task",
+    "owner": "tester@example.com",
+    "created_at": "<DATE>T<TIME>Z",
+    "created_by": "tester",
+    "updated_at": "<DATE>T<TIME>Z",
+    "labels": [
+      "z"
+    ],
+    "depth": 1,
+    "parent_id": "<ID:1>",
+    "edge_from_parent": "blocks",
+    "truncated": false
+  }
+]
+=== step 51 ===
+$ bd dep relate <ID:1> <ID:3>
+--- exit 1
+--- stderr
+Error: failed to add relates-to <ID:3> -> <ID:1>: dependency <ID:3> -> <ID:1> already exists with type "parent-child" (requested "relates-to"); remove it first with 'bd dep remove' then re-add
+Usage:
+  bd dep relate <id1> <id2> [flags]
+
+Flags:
+  -h, --help   help for relate
+
+Global Flags:
+      --actor string              Actor name for audit trail (default: $BEADS_ACTOR, git user.name, $USER)
+      --cpu-profile               Generate CPU profile for performance analysis
+      --database string           Run against a different server database for this invocation, without changing the project's configured database (proxied-server mode only)
+      --db string                 Database path (default: auto-discover .beads/*.db). In proxied-server mode, a value that isn't an existing path is treated as a database name override (see --database)
+  -C, --directory string          Change to this directory before running the command (like git -C)
+      --dolt-auto-commit string   Dolt auto-commit policy (off|on|batch). 'on': commit after each write. 'batch': defer commits to bd dolt commit; uncommitted changes persist in the working set until then (a live batch-mode bd process also flushes on SIGTERM/SIGHUP). Applies to embedded and direct SQL-server modes; proxied-server routes are unaffected. Default: on. Override via config key dolt.auto-commit
+      --global                    Use the global shared-server database (beads_global)
+      --ignore-schema-skew        Proceed despite forward schema drift (some queries may fail)
+      --json                      Output in JSON format
+      --mem-profile string        Write heap profile to FILE on exit (also respects BEADS_MEM_PROFILE)
+      --no-color                  Disable color output (also: NO_COLOR=1 or CLICOLOR=0)
+  -q, --quiet                     Suppress non-essential output (errors only)
+      --readonly                  Read-only mode: block write operations (for worker sandboxes)
+      --sandbox                   Sandbox mode: disables Dolt auto-push
+  -v, --verbose                   Enable verbose/debug output
+
+=== step 52 ===
+$ bd dep relate <ID:1> <ID:3> --json
+--- exit 1
+--- stderr
+Error: failed to add relates-to <ID:3> -> <ID:1>: dependency <ID:3> -> <ID:1> already exists with type "parent-child" (requested "relates-to"); remove it first with 'bd dep remove' then re-add
+Usage:
+  bd dep relate <id1> <id2> [flags]
+
+Flags:
+  -h, --help   help for relate
+
+Global Flags:
+      --actor string              Actor name for audit trail (default: $BEADS_ACTOR, git user.name, $USER)
+      --cpu-profile               Generate CPU profile for performance analysis
+      --database string           Run against a different server database for this invocation, without changing the project's configured database (proxied-server mode only)
+      --db string                 Database path (default: auto-discover .beads/*.db). In proxied-server mode, a value that isn't an existing path is treated as a database name override (see --database)
+  -C, --directory string          Change to this directory before running the command (like git -C)
+      --dolt-auto-commit string   Dolt auto-commit policy (off|on|batch). 'on': commit after each write. 'batch': defer commits to bd dolt commit; uncommitted changes persist in the working set until then (a live batch-mode bd process also flushes on SIGTERM/SIGHUP). Applies to embedded and direct SQL-server modes; proxied-server routes are unaffected. Default: on. Override via config key dolt.auto-commit
+      --global                    Use the global shared-server database (beads_global)
+      --ignore-schema-skew        Proceed despite forward schema drift (some queries may fail)
+      --json                      Output in JSON format
+      --mem-profile string        Write heap profile to FILE on exit (also respects BEADS_MEM_PROFILE)
+      --no-color                  Disable color output (also: NO_COLOR=1 or CLICOLOR=0)
+  -q, --quiet                     Suppress non-essential output (errors only)
+      --readonly                  Read-only mode: block write operations (for worker sandboxes)
+      --sandbox                   Sandbox mode: disables Dolt auto-push
+  -v, --verbose                   Enable verbose/debug output
+
+=== step 53 ===
+$ bd dep relate <ID:1> <ID:1>
+--- exit 1
+--- stderr
+Error: cannot relate an issue to itself
+Usage:
+  bd dep relate <id1> <id2> [flags]
+
+Flags:
+  -h, --help   help for relate
+
+Global Flags:
+      --actor string              Actor name for audit trail (default: $BEADS_ACTOR, git user.name, $USER)
+      --cpu-profile               Generate CPU profile for performance analysis
+      --database string           Run against a different server database for this invocation, without changing the project's configured database (proxied-server mode only)
+      --db string                 Database path (default: auto-discover .beads/*.db). In proxied-server mode, a value that isn't an existing path is treated as a database name override (see --database)
+  -C, --directory string          Change to this directory before running the command (like git -C)
+      --dolt-auto-commit string   Dolt auto-commit policy (off|on|batch). 'on': commit after each write. 'batch': defer commits to bd dolt commit; uncommitted changes persist in the working set until then (a live batch-mode bd process also flushes on SIGTERM/SIGHUP). Applies to embedded and direct SQL-server modes; proxied-server routes are unaffected. Default: on. Override via config key dolt.auto-commit
+      --global                    Use the global shared-server database (beads_global)
+      --ignore-schema-skew        Proceed despite forward schema drift (some queries may fail)
+      --json                      Output in JSON format
+      --mem-profile string        Write heap profile to FILE on exit (also respects BEADS_MEM_PROFILE)
+      --no-color                  Disable color output (also: NO_COLOR=1 or CLICOLOR=0)
+  -q, --quiet                     Suppress non-essential output (errors only)
+      --readonly                  Read-only mode: block write operations (for worker sandboxes)
+      --sandbox                   Sandbox mode: disables Dolt auto-push
+  -v, --verbose                   Enable verbose/debug output
+
+=== step 54 ===
+$ bd dep relate <ID:1> nope
+--- exit 1
+--- stderr
+Error: failed to resolve nope: no issue found matching "nope"
+Usage:
+  bd dep relate <id1> <id2> [flags]
+
+Flags:
+  -h, --help   help for relate
+
+Global Flags:
+      --actor string              Actor name for audit trail (default: $BEADS_ACTOR, git user.name, $USER)
+      --cpu-profile               Generate CPU profile for performance analysis
+      --database string           Run against a different server database for this invocation, without changing the project's configured database (proxied-server mode only)
+      --db string                 Database path (default: auto-discover .beads/*.db). In proxied-server mode, a value that isn't an existing path is treated as a database name override (see --database)
+  -C, --directory string          Change to this directory before running the command (like git -C)
+      --dolt-auto-commit string   Dolt auto-commit policy (off|on|batch). 'on': commit after each write. 'batch': defer commits to bd dolt commit; uncommitted changes persist in the working set until then (a live batch-mode bd process also flushes on SIGTERM/SIGHUP). Applies to embedded and direct SQL-server modes; proxied-server routes are unaffected. Default: on. Override via config key dolt.auto-commit
+      --global                    Use the global shared-server database (beads_global)
+      --ignore-schema-skew        Proceed despite forward schema drift (some queries may fail)
+      --json                      Output in JSON format
+      --mem-profile string        Write heap profile to FILE on exit (also respects BEADS_MEM_PROFILE)
+      --no-color                  Disable color output (also: NO_COLOR=1 or CLICOLOR=0)
+  -q, --quiet                     Suppress non-essential output (errors only)
+      --readonly                  Read-only mode: block write operations (for worker sandboxes)
+      --sandbox                   Sandbox mode: disables Dolt auto-push
+  -v, --verbose                   Enable verbose/debug output
+
+=== step 55 ===
+$ bd dep relate <ID:1>
+--- exit 1
+--- stderr
+Error: accepts 2 arg(s), received 1
+Usage:
+  bd dep relate <id1> <id2> [flags]
+
+Flags:
+  -h, --help   help for relate
+
+Global Flags:
+      --actor string              Actor name for audit trail (default: $BEADS_ACTOR, git user.name, $USER)
+      --cpu-profile               Generate CPU profile for performance analysis
+      --database string           Run against a different server database for this invocation, without changing the project's configured database (proxied-server mode only)
+      --db string                 Database path (default: auto-discover .beads/*.db). In proxied-server mode, a value that isn't an existing path is treated as a database name override (see --database)
+  -C, --directory string          Change to this directory before running the command (like git -C)
+      --dolt-auto-commit string   Dolt auto-commit policy (off|on|batch). 'on': commit after each write. 'batch': defer commits to bd dolt commit; uncommitted changes persist in the working set until then (a live batch-mode bd process also flushes on SIGTERM/SIGHUP). Applies to embedded and direct SQL-server modes; proxied-server routes are unaffected. Default: on. Override via config key dolt.auto-commit
+      --global                    Use the global shared-server database (beads_global)
+      --ignore-schema-skew        Proceed despite forward schema drift (some queries may fail)
+      --json                      Output in JSON format
+      --mem-profile string        Write heap profile to FILE on exit (also respects BEADS_MEM_PROFILE)
+      --no-color                  Disable color output (also: NO_COLOR=1 or CLICOLOR=0)
+  -q, --quiet                     Suppress non-essential output (errors only)
+      --readonly                  Read-only mode: block write operations (for worker sandboxes)
+      --sandbox                   Sandbox mode: disables Dolt auto-push
+  -v, --verbose                   Enable verbose/debug output
+
+=== step 56 ===
+$ bd dep list <ID:1>
+--- exit 0
+--- stdout
+  <ID:2>: Beta [P2] (open) via blocks
+  <ID:3>: Gamma [P0] (open) via relates-to
+
+=== step 57 ===
+$ bd dep list <ID:3> --direction up
+--- exit 0
+--- stdout
+  <ID:1>: Alpha [P1] (open) via relates-to
+
+=== step 58 ===
+$ bd dep tree <ID:1>
+--- exit 0
+--- stdout
+
+🌲 Dependency tree for <ID:1>:
+
+<ID:1>: Alpha [P1] (open) [BLOCKED]
+    └── <ID:2>: Beta [P2] (open) [blocks]
+
+=== step 59 ===
+$ bd dep unrelate <ID:1> <ID:3>
+--- exit 0
+--- stdout
+✓ Unlinked <ID:1> ↔ <ID:3>
+=== step 60 ===
+$ bd dep unrelate <ID:1> <ID:3> --json
+--- exit 0
+--- stdout
+{
+  "id1": "<ID:1>",
+  "id2": "<ID:3>",
+  "unrelated": true
+}
+=== step 61 ===
+$ bd dep add --file deps.jsonl
+--- exit 0
+--- stdout
+✓ Added 2 dependencies
+=== step 62 ===
+$ bd dep add --file deps.jsonl --json
+--- exit 0
+--- stdout
+{
+  "count": 2,
+  "dependencies": [
+    {
+      "depends_on_id": "<ID:4>",
+      "issue_id": "<ID:3>",
+      "type": "blocks"
+    },
+    {
+      "depends_on_id": "<ID:4>",
+      "issue_id": "<ID:2>",
+      "type": "tracks"
+    }
+  ],
+  "schema_version": 1,
+  "status": "added"
+}
+=== step 63 ===
+$ bd dep add --file bad.jsonl
+--- exit 1
+--- stderr
+Error: bulk dependency validation failed:
+  line 1: missing to
+  line 2: invalid JSON: invalid character 'b' looking for beginning of object key string
+  line 3: invalid JSON: json: cannot unmarshal number into Go struct field bulkDepInput.from of type string
+  line 4: unknown dependency type "weird"; valid types: approved-by, assigned-to, attests, authored-by, blocked-by, blocks, caused-by, conditional-blocks, delegated-from, depends-on, discovered-from, duplicates, parent-child, related, relates-to, replies-to, supersedes, tracks, until, validates, waits-for
+=== step 64 ===
+$ bd dep add --file bad2.jsonl
+--- exit 1
+--- stderr
+Error: bulk dependency validation failed:
+  line 1: resolving issue ID nope: resolving issue ID nope: no issue found matching "nope"
+=== step 65 ===
+$ bd dep add --file missing.jsonl
+--- exit 1
+--- stderr
+Error: open dependency file: open missing.jsonl: no such file or directory
+=== step 66 ===
+$ bd dep add <ID:4> --blocked-by <ID:1>
+--- exit 0
+--- stdout
+✓ Added dependency: <ID:4> (Delta) depends on <ID:1> (Alpha) (blocks)
+=== step 67 ===
+$ bd dep add <ID:4> <ID:1> --blocked-by <ID:1>
+--- exit 1
+--- stderr
+Error: cannot use both positional depends-on-id and --blocked-by/--depends-on flag
+=== step 68 ===
+$ bd dep tree <ID:3> --format mermaid
+--- exit 0
+--- stdout
+flowchart TD
+  <ID:3>["☐ <ID:3>: Gamma"]
+  <ID:4>["☐ <ID:4>: Delta"]
+  <ID:1>["☐ <ID:1>: Alpha"]
+  <ID:2>["☐ <ID:2>: Beta"]
+
+  <ID:3> --> <ID:4>
+  <ID:4> --> <ID:1>
+  <ID:1> --> <ID:2>
+=== step 69 ===
+$ bd dep tree <ID:4> --direction up --status open
+--- exit 0
+--- stdout
+
+🌲 Dependent tree for <ID:4>:
+
+<ID:4>: Delta [P3] (open) [READY]
+    └── <ID:2>: Beta [P2] (open) [tracks]
+    │   ├── <ID:1>: Alpha [P1] (open) [blocks]
+        └── <ID:3>: Gamma [P0] (open) [blocks]
+
+=== step 70 ===
+$ bd dep tree <ID:4> --direction up --status closed
+--- exit 0
+--- stdout
+
+<ID:4> has no dependents
+=== step 71 ===
+$ bd dep tree <ID:4> --max-depth 0
+--- exit 1
+--- stderr
+Error: --max-depth must be >= 1
+=== step 72 ===
+$ bd dep list <ID:4> --type tracks
+--- exit 0
+--- stdout
+
+<ID:4> has no dependencies
+=== step 73 ===
+$ bd dep list <ID:1> <ID:4> -t blocks
+--- exit 0
+--- stdout
+
+📋 Dependencies of <ID:1>:
+
+  <ID:2> via blocks
+
+📋 Dependencies of <ID:4>:
+
+  <ID:1> via blocks
+
+=== step 74 ===
+$ bd dep list <ID:1> nope
+--- exit 0
+--- stdout
+
+📋 Dependencies of <ID:1>:
+
+  <ID:2> via blocks
+
+--- stderr
+warning: resolving nope: no issue found matching "nope" (skipped)
+=== step 75 ===
+$ bd dep list nope1 nope2
+--- exit 0
+--- stderr
+warning: resolving nope1: no issue found matching "nope1" (skipped)
+warning: resolving nope2: no issue found matching "nope2" (skipped)
+no resolvable issues in batch
+=== step 76 ===
+$ bd dep list nope1 nope2 --json
+--- exit 0
+--- stdout
+[]
+--- stderr
+warning: resolving nope1: no issue found matching "nope1" (skipped)
+warning: resolving nope2: no issue found matching "nope2" (skipped)
+=== step 77 ===
+$ bd dep remove <ID:1> nope
+--- exit 1
+--- stderr
+Error: resolving dependency ID nope: resolving issue ID nope: no issue found matching "nope"
+=== step 78 ===
+$ bd dep remove <ID:1> other-thing
+--- exit 0
+--- stdout
+✓ Removed dependency: <ID:1> (Alpha) → other-thing
+=== step 79 ===
+$ bd dep remove <ID:1>
+--- exit 1
+--- stderr
+Error: accepts 2 arg(s), received 1
+=== step 80 ===
+$ bd dep tree <ID:2> --direction both
+--- exit 0
+--- stdout
+
+🌲 Full dependency graph for <ID:2>:
+
+<ID:2>: Beta [P2] (open) [BLOCKED]
+    ├── <ID:1>: Alpha [P1] (open) [blocks]
+        └── <ID:4>: Delta [P3] (open) [blocks]
+        │   ├── <ID:3>: Gamma [P0] (open) [blocks]
+            └── <ID:1> (shown above)
+    └── <ID:4> (shown above)
+
+=== step 81 ===
+$ bd export
+--- exit 0
+--- stdout
+{"_type":"issue","id":"<ID:3>","title":"Gamma","status":"open","priority":0,"issue_type":"epic","owner":"tester@example.com","created_at":"<DATE>T<TIME>Z","created_by":"tester","updated_at":"<DATE>T<TIME>Z","dependencies":[{"issue_id":"<ID:3>","depends_on_id":"<ID:2>","type":"blocks","created_at":"<DATE>T<TIME>Z","created_by":"tester","metadata":"{}"},{"issue_id":"<ID:3>","depends_on_id":"<ID:4>","type":"blocks","created_at":"<DATE>T<TIME>Z","created_by":"tester","metadata":"{}"}],"dependency_count":2,"dependent_count":0,"comment_count":0}
+{"_type":"issue","id":"<ID:1>","title":"Alpha","status":"open","priority":1,"issue_type":"task","owner":"tester@example.com","created_at":"<DATE>T<TIME>Z","created_by":"tester","updated_at":"<DATE>T<TIME>Z","labels":["x","y"],"dependencies":[{"issue_id":"<ID:1>","depends_on_id":"<ID:2>","type":"blocks","created_at":"<DATE>T<TIME>Z","created_by":"tester","metadata":"{}"}],"dependency_count":1,"dependent_count":1,"comment_count":0}
+{"_type":"issue","id":"<ID:2>","title":"Beta","status":"open","priority":2,"issue_type":"task","owner":"tester@example.com","created_at":"<DATE>T<TIME>Z","created_by":"tester","updated_at":"<DATE>T<TIME>Z","labels":["z"],"dependencies":[{"issue_id":"<ID:2>","depends_on_id":"external:proj:cap","type":"blocks","created_at":"<DATE>T<TIME>Z","created_by":"tester","metadata":"{}"},{"issue_id":"<ID:2>","depends_on_id":"other-xyz","type":"blocks","created_at":"<DATE>T<TIME>Z","created_by":"tester","metadata":"{}"},{"issue_id":"<ID:2>","depends_on_id":"<ID:4>","type":"tracks","created_at":"<DATE>T<TIME>Z","created_by":"tester","metadata":"{}"}],"dependency_count":2,"dependent_count":2,"comment_count":0}
+{"_type":"issue","id":"<ID:4>","title":"Delta","status":"open","priority":3,"issue_type":"task","owner":"tester@example.com","created_at":"<DATE>T<TIME>Z","created_by":"tester","updated_at":"<DATE>T<TIME>Z","dependencies":[{"issue_id":"<ID:4>","depends_on_id":"<ID:1>","type":"blocks","created_at":"<DATE>T<TIME>Z","created_by":"tester","metadata":"{}"}],"dependency_count":1,"dependent_count":1,"comment_count":0}
+=== snapshot: bd export ===
+$ bd export
+--- exit 0
+--- unordered ^\{
+--- stdout
+{"_type":"issue","id":"<ID:1>","title":"Alpha","status":"open","priority":1,"issue_type":"task","owner":"tester@example.com","created_at":"<DATE>T<TIME>Z","created_by":"tester","updated_at":"<DATE>T<TIME>Z","labels":["x","y"],"dependencies":[{"issue_id":"<ID:1>","depends_on_id":"<ID:2>","type":"blocks","created_at":"<DATE>T<TIME>Z","created_by":"tester","metadata":"{}"}],"dependency_count":1,"dependent_count":1,"comment_count":0}
+{"_type":"issue","id":"<ID:2>","title":"Beta","status":"open","priority":2,"issue_type":"task","owner":"tester@example.com","created_at":"<DATE>T<TIME>Z","created_by":"tester","updated_at":"<DATE>T<TIME>Z","labels":["z"],"dependencies":[{"issue_id":"<ID:2>","depends_on_id":"external:proj:cap","type":"blocks","created_at":"<DATE>T<TIME>Z","created_by":"tester","metadata":"{}"},{"issue_id":"<ID:2>","depends_on_id":"other-xyz","type":"blocks","created_at":"<DATE>T<TIME>Z","created_by":"tester","metadata":"{}"},{"issue_id":"<ID:2>","depends_on_id":"<ID:4>","type":"tracks","created_at":"<DATE>T<TIME>Z","created_by":"tester","metadata":"{}"}],"dependency_count":2,"dependent_count":2,"comment_count":0}
+{"_type":"issue","id":"<ID:3>","title":"Gamma","status":"open","priority":0,"issue_type":"epic","owner":"tester@example.com","created_at":"<DATE>T<TIME>Z","created_by":"tester","updated_at":"<DATE>T<TIME>Z","dependencies":[{"issue_id":"<ID:3>","depends_on_id":"<ID:2>","type":"blocks","created_at":"<DATE>T<TIME>Z","created_by":"tester","metadata":"{}"},{"issue_id":"<ID:3>","depends_on_id":"<ID:4>","type":"blocks","created_at":"<DATE>T<TIME>Z","created_by":"tester","metadata":"{}"}],"dependency_count":2,"dependent_count":0,"comment_count":0}
+{"_type":"issue","id":"<ID:4>","title":"Delta","status":"open","priority":3,"issue_type":"task","owner":"tester@example.com","created_at":"<DATE>T<TIME>Z","created_by":"tester","updated_at":"<DATE>T<TIME>Z","dependencies":[{"issue_id":"<ID:4>","depends_on_id":"<ID:1>","type":"blocks","created_at":"<DATE>T<TIME>Z","created_by":"tester","metadata":"{}"}],"dependency_count":1,"dependent_count":1,"comment_count":0}
+=== snapshot: tree ===
+.beads.gate.lock (0600)
+.beads/
+.beads/.gitignore (0600)
+.beads/.local_version (0600)
+.beads/README.md (0644)
+.beads/config.yaml (0600)
+.beads/<STORE>.gate.lock (0600)
+.beads/<STORE>/
+.beads/last-touched (0600)
+.beads/metadata.json (0600)
+.git/
+.gitignore (0644)
+bad.jsonl (0644)
+bad2.jsonl (0644)
+deps.jsonl (0644)
+=== snapshot: file .beads.gate.lock ===
+=== snapshot: file .beads/.gitignore ===
+# Dolt database (managed by Dolt, not git)
+dolt/
+embeddeddolt/
+proxieddb/
+
+# Runtime files
+bd.sock
+bd.sock.startlock
+sync-state.json
+last-touched
+.exclusive-lock
+
+# Daemon runtime (lock, log, pid)
+daemon.*
+
+# Push state (runtime, per-machine)
+push-state.json
+
+# Lock files (various runtime locks)
+*.lock
+
+# Credential key (encryption key for federation peer auth — never commit)
+.beads-credential-key
+
+# Local version tracking (prevents upgrade notification spam after git ops)
+.local_version
+
+proxied_server_client_info.json
+
+# Worktree redirect file (contains relative path to main repo's .beads/)
+# Must not be committed as paths would be wrong in other clones
+redirect
+
+# Sync state (local-only, per-machine)
+# These files are machine-specific and should not be shared across clones
+.sync.lock
+
+# Workspace operation gate (internal/workspacegate): physical-root gate
+# files live beside the guarded root inside .beads (e.g. dolt.gate.lock)
+*.gate.lock*
+export-state/
+export-state.json
+last_pull
+
+# Ephemeral store (SQLite - wisps/molecules, intentionally not versioned)
+ephemeral.sqlite3
+ephemeral.sqlite3-journal
+ephemeral.sqlite3-wal
+ephemeral.sqlite3-shm
+
+# Dolt server management (auto-started by bd)
+dolt-server.pid
+dolt-server.log
+dolt-server.lock
+dolt-server.port
+dolt-server.activity
+
+# Debug-mode pprof artifacts (written when dolt.debug: true in config.yaml)
+dolt-pprof/
+
+# Corrupt backup directories (created by bd doctor --fix recovery)
+*.corrupt.backup/
+
+# Backup data (auto-exported JSONL, local-only)
+backup/
+
+# Per-project environment file (Dolt connection config, GH#2520)
+.env
+
+# Legacy files (from pre-Dolt versions)
+*.db
+*.db?*
+*.db-journal
+*.db-wal
+*.db-shm
+db.sqlite
+bd.db
+# NOTE: Do NOT add negation patterns here.
+# They would override fork protection in .git/info/exclude.
+# Config files (metadata.json, config.yaml) are tracked by git by default
+# since no pattern above ignores them.
+=== snapshot: file .beads/.local_version ===
+1.3.0
+=== snapshot: file .beads/README.md ===
+# Beads - AI-Native Issue Tracking
+
+Welcome to Beads! This repository uses **Beads** for issue tracking - a modern, AI-native tool designed to live directly in your codebase alongside your code.
+
+## What is Beads?
+
+Beads is issue tracking that lives in your repo, making it perfect for AI coding agents and developers who want their issues close to their code. No web UI required - everything works through the CLI and integrates seamlessly with git.
+
+**Learn more:** [github.com/steveyegge/beads](https://github.com/steveyegge/beads)
+
+## Quick Start
+
+### Essential Commands
+
+```bash
+# Create new issues
+bd create "Add user authentication"
+
+# View all issues
+bd list
+
+# View issue details
+bd show <issue-id>
+
+# Update issue status
+bd update <issue-id> --claim
+bd update <issue-id> --status done
+
+# Sync with Dolt remote
+bd dolt push
+```
+
+### Working with Issues
+
+Issues in Beads are:
+- **Git-native**: Stored in Dolt database with version control and branching
+- **AI-friendly**: CLI-first design works perfectly with AI coding agents
+- **Branch-aware**: Issues can follow your branch workflow
+- **Sync-ready**: Uses Dolt remotes for backup and team sharing
+
+## Why Beads?
+
+✨ **AI-Native Design**
+- Built specifically for AI-assisted development workflows
+- CLI-first interface works seamlessly with AI coding agents
+- No context switching to web UIs
+
+🚀 **Developer Focused**
+- Issues live in your repo, right next to your code
+- Works offline, syncs when you push
+- Fast, lightweight, and stays out of your way
+
+🔧 **Git Integration**
+- Dolt-native sync via bd dolt push / bd dolt pull
+- Branch-aware issue tracking
+- Dolt-native three-way merge resolution
+
+## Get Started with Beads
+
+Try Beads in your own projects:
+
+```bash
+# Install Beads
+curl -sSL https://raw.githubusercontent.com/steveyegge/beads/main/scripts/install.sh | bash
+
+# Initialize in your repo
+bd init
+
+# Create your first issue
+bd create "Try out Beads"
+```
+
+## Learn More
+
+- **Documentation**: [github.com/steveyegge/beads/docs](https://github.com/steveyegge/beads/tree/main/docs)
+- **Quick Start Guide**: Run `bd quickstart`
+- **Examples**: [github.com/steveyegge/beads/examples](https://github.com/steveyegge/beads/tree/main/examples)
+
+---
+
+*Beads: Issue tracking that moves at the speed of thought* ⚡
+=== snapshot: file .beads/config.yaml ===
+# Beads Configuration File
+# This file configures default behavior for all bd commands in this repository
+# All settings can also be set via environment variables (BD_* prefix)
+# or overridden with command-line flags
+
+# Issue prefix for this repository (used by bd init)
+# If not set, bd init will auto-detect from directory name
+# Example: issue-prefix: "myproject" creates issues like "myproject-1", "myproject-2", etc.
+# issue-prefix: ""
+
+# Use no-db mode: JSONL-only, no Dolt database
+# When true, .beads/issues.jsonl is the only local store
+# no-db: false
+
+# Enable JSON output by default
+# json: false
+
+# Feedback title formatting for mutating commands (create/update/close/dep/edit)
+# 0 = hide titles, N > 0 = truncate to N characters
+# output:
+#   title-length: 255
+
+# Default actor for audit trails (overridden by BEADS_ACTOR or --actor)
+# actor: ""
+
+# Optional JSONL sidecar for explicit agent/tool interaction audit records.
+# Issue history is always recorded in the database and is visible with
+# bd history <id> --events; this only controls .beads/interactions.jsonl.
+# audit:
+#   enabled: false
+
+# Export events (audit trail) to .beads/events.jsonl on each flush/sync
+# When enabled, new events are appended incrementally using a high-water mark.
+# Use 'bd export --events' to trigger manually regardless of this setting.
+# events-export: false
+
+# Multi-repo configuration (experimental - bd-307)
+# Allows hydrating from multiple repositories and routing writes to the correct database
+# repos:
+#   primary: "."  # Primary repo (where this database lives)
+#   additional:   # Additional repos to hydrate from (read-only)
+#     - ~/beads-planning  # Personal planning repo
+#     - ~/work-planning   # Work planning repo
+
+# Dolt-native backup (periodic backup for off-machine recovery)
+# This is full database backup only. Cross-machine sync uses Dolt remotes.
+# backup:
+#   enabled: false     # Disable auto-backup entirely
+#   interval: 15m      # Minimum time between auto-backups
+#   git-push: false    # Disable git push (backup locally only)
+#   git-repo: ""       # Separate git repo for backups (default: project repo)
+
+# Optional JSONL auto-export for viewers, interchange, and issue-level migration.
+# Disabled by default; enable only when an integration needs fresh .beads/issues.jsonl.
+# Use relative paths under .beads/ for JSONL import/export filenames.
+# export:
+#   auto: false
+#   path: issues.jsonl
+#   interval: <DUR>
+#   git-add: false
+# import:
+#   path: issues.jsonl
+
+# Integration settings (access with 'bd config get/set')
+# Non-secret keys (stored in the database):
+# - jira.url, jira.project
+# - linear.team_id
+# - github.org, github.repo
+#
+# Secret keys (stored in this file but prefer env vars to avoid git exposure):
+# - linear.api_key  → use LINEAR_API_KEY env var instead
+# - github.token    → use GITHUB_TOKEN env var instead
+=== snapshot: file .beads/<STORE>.gate.lock ===
+=== snapshot: file .beads/last-touched ===
+<ID:4>
+=== snapshot: file .beads/metadata.json ===
+{
+  "backend": "<BACKEND>",
+  "project_id": "<UUID:1>"
+}
+\ no newline at end
+=== snapshot: file .gitignore ===
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key
+.beads/proxieddb/
+*.gate.lock*
+=== snapshot: file bad.jsonl ===
+{"from":"<ID:3>"}
+{bad
+{"from":1,"to":"x"}
+{"from":"<ID:3>","to":"<ID:4>","type":"weird"}
+=== snapshot: file bad2.jsonl ===
+{"from":"nope","to":"<ID:4>"}
+=== snapshot: file deps.jsonl ===
+{"from":"<ID:3>","to":"<ID:4>"}
+{"issue_id":"<ID:2>","depends_on_id":"<ID:4>","type":"tracks"}

@@ -37,5 +37,13 @@ fast and in a functional style. Read README.md for the layout and design.
 - Inside `beads/`, modules import each other as `import .name;` so that both
   `bd.goose` (as plain modules) and `tests/` (through
   `import beads from "../beads";`) resolve them.
+- A resizable field (`u8[>..]`) must be a struct's last field, and a struct
+  holding one cannot be an array element. Keep such text in one shared
+  buffer and store `Span`s.
+- A struct of references (`types::Arena`) is treated as possibly reaching
+  anything its callee's other arguments view. A function that pushes a
+  caller's views into it then needs the arena to outlive them all, which
+  rarely holds; copy the bytes into `a.text` first (`lifecycle::own`).
+- `guard` is a keyword too.
 - `goose file.goose` runs in-process through TinyCC (fast to start);
   `goose build` compiles with the system C compiler at -O2. Tests build.

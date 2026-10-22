@@ -152,6 +152,7 @@ fn main() {
     var agent: u8[>..] = [];
     var claude: u8[>..] = [];
     var beads_dir_env: u8[>..] = [];
+    var session: u8[>..] = [];
     var cwd: u8[>..] = [];
     var git_name: u8[>..] = [];
     var git_email: u8[>..] = [];
@@ -166,25 +167,32 @@ fn main() {
     if getenv("GIT_AUTHOR_EMAIL", author_email) { e.git_author_email = author_email; }
     e.agent_mode = (getenv("BD_AGENT_MODE", agent) && agent == "1") || getenv("CLAUDE_CODE", claude);
     e.beads_dir_set = getenv("BEADS_DIR", beads_dir_env);
+    if getenv("CLAUDE_SESSION_ID", session) { e.claude_session_id = session; }
 
-    // The other files the command asked for.
-    var wanted: (const u8[:])[>..] = [];
-    cli::wanted_files(argv, wanted);
+    var beads_dir: u8[>..] = [];
+    let in_git = discover(cwd, beads_dir_env, beads_dir);
+
+    // The other files the command asked for; "-" is standard input.
+    let wanted = cli::wanted_files(argv, beads_dir);
     var contents: u8[>..] = [];
     var spans: i64[>..] = [];
     var found: (const u8[:])[>..] = [];
-    for path in wanted {
+    each_split(wanted, 0) { path =>
         let start = contents.len;
-        if read_file(path, contents) {
+        if path == "-" {
+            read_stdin(contents);
+            found.push(path);
+            spans.push(start);
+            spans.push(contents.len);
+        } else if path.len > 0 && sys::kind(path) == sys::FILE && read_file(path, contents) {
             found.push(path);
             spans.push(start);
             spans.push(contents.len);
         }
-    }
+    };
     var files: store::Pair[>..] = [];
     for path, n in found { files.push(store::Pair { key: path, value: contents[spans[2 * n]..spans[2 * n + 1]] }); }
-    var beads_dir: u8[>..] = [];
-    let in_git = discover(cwd, beads_dir_env, beads_dir);
+    e.stdin_redirected = sys::stdin_redirected();
     var ws = cli::Workspace { beads_dir: beads_dir, in_git: in_git, files: files, .. };
     var root: u8[>..] = [];
     if beads_dir.len > 0 { root.append(parent(beads_dir)); }

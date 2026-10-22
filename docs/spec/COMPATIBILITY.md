@@ -225,7 +225,7 @@ Invariants (rejected with exit 1 when violated):
 **Status** (built in): `open`, `in_progress`, `blocked`, `deferred`, `closed`,
 `pinned`, `hooked`. Custom statuses come from config `status.custom`
 (`name[:category]`, name matches `^[a-z][a-z0-9_-]*$`, at most 50) with
-categories `active` (appears in `bd ready`), `wip`, `done`, `frozen`, or none.
+categories `active` (claimable like `open`), `wip`, `done`, `frozen`, or none.
 `bd statuses --json` prints each built-in with its category, icon and
 description (see transcript).
 
@@ -234,8 +234,11 @@ description (see transcript).
 Internal types: `message`, `molecule`, `gate`, `event`. Aliases on input:
 `enhancement`/`feat` → `feature`, `dec`/`adr` → `decision`. Custom types via
 `types.custom`; infra types (routed to the wisps plane) via `types.infra`.
-Import trusts unknown types (federation trust model); `create`/`update` reject
-them with `Error: validation failed: validation failed for issue : invalid issue type: <t>`.
+`create`/`update` reject unknown types with
+`Error: validation failed: validation failed for issue : invalid issue type: <t>`;
+import rejects them too, naming the row:
+`Error: import failed: validation failed for issue <id>: invalid issue type: <t>`
+(and likewise `invalid status: <s>`).
 
 **Priority**: integers 0–4; input also accepts `P0`–`P4`. Words are rejected:
 `Error: invalid priority "9" (expected 0-4 or P0-P4, not words like high/medium/low)`.
@@ -375,7 +378,8 @@ Issues are never blocked by `related`, `discovered-from` or graph-link edges.
 
 Default filter (upstream `sqlbuild/ready.go`):
 
-- status `open` or a custom status in category `active` (not `in_progress`);
+- status `open` only: neither `in_progress` nor a custom status, even one in
+  category `active`, though `bd ready --claim` claims from those too;
 - `pinned` false, `is_blocked` false, not ephemeral (unless `--include-ephemeral`);
 - `issue_type` not in {`merge-request`, `gate`, `molecule`, `rig`} ∪ infra
   types (unless `-t` names one);
@@ -383,20 +387,24 @@ Default filter (upstream `sqlbuild/ready.go`):
   (unless `--include-deferred`);
 - plus any `--assignee/--unassigned/--label/--label-any/--exclude-label/--priority/--parent/--mol/--has-metadata-key/--metadata-field` filters.
 
-Ordering (`--sort`, default `hybrid`):
+Ordering (`--sort`, default `priority`):
 
 - `hybrid`: issues created in the last 48 h first, ordered by priority; then
   older ones by `created_at` ascending; tie-break `id` ascending.
 - `priority`: `priority ASC, created_at ASC, id ASC`.
 - `oldest`: `created_at ASC, id ASC`.
 
-`bd ready --json` items carry `dependencies` (full edge objects) and the three
-counts. `bd ready --claim` atomically claims the first unassigned match.
+`bd ready --json` items carry `labels`, `dependencies` (full edge objects, in
+edge ID order, the order Dolt's `JSON_ARRAYAGG` reads them in), the three
+counts (`dependency_count` and `dependent_count` count `blocks` edges only)
+and `parent` when the issue has one. `bd ready --claim` atomically claims the
+first unassigned match.
 
 ### 5.3 `bd blocked`
 
 Issues with `is_blocked` true. JSON adds `blocked_by_count` and `blocked_by`
-(IDs of open blockers).
+(IDs of open blockers, or the parent when only an ancestor blocks), and has
+no `dependencies`.
 
 ### 5.4 Claims and leases
 
@@ -882,6 +890,16 @@ reproduces it, and the harness pins it:
 10. Closing a closed issue rewrites `closed_at` (§12).
 11. `dep tree` emits ANSI bold for `[BLOCKED]` even when stdout is not a TTY and `NO_COLOR` is set.
 12. Docs say the default minimum hash length is 4; the code uses 3 (§4.2).
+13. `bd dep relate` writes its two edges separately: when the second is
+    refused (say the pair already has a `parent-child` edge), the command fails
+    but the first edge stays.
+14. `bd dep add --no-cycle-check` still refuses an edge that closes a cycle; the
+    flag only skips the warning sweep after the add.
+15. `bd dep remove` reports success even when there was no such edge.
+16. Where beads reads an issue's edges without an `ORDER BY` (`dep tree`,
+    `ready --json`, `show`), they come in edge ID order: the edge ID is a
+    version 5 UUID of `issue_id + "\x1f" + target`, so the order looks random
+    but is stable.
 
 ---
 

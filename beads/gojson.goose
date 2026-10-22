@@ -77,15 +77,17 @@ fn rune_count(s: const u8[:]) -> i64 {
 // Whether c, an ASCII byte, goes into a string as itself.
 fn html_safe(c: u8) -> bool { c >= 0x20 && c != '"' && c != '\\' && c != '<' && c != '>' && c != '&' }
 
-// s as a quoted JSON string, escaped as Go's json.Marshal escapes it.
-fn format_string(out: u8[>..]&, s: const u8[:]) {
+// s as a quoted JSON string, escaped as Go's json.Marshal escapes it; with
+// escape_html false, as an encoder with SetEscapeHTML(false) does, leaving
+// <, > and & as they are.
+fn format_string(out: u8[>..]&, s: const u8[:], escape_html: bool = true) {
     out.push('"');
     var start = 0;
     var i = 0;
     while i < s.len {
         let c = s[i];
         if c < 0x80 {
-            if html_safe(c) { i++; continue; }
+            if html_safe(c) || (!escape_html && (c == '<' || c == '>' || c == '&')) { i++; continue; }
             out.append(s[start..i]);
             out.push('\\');
             match c {

@@ -42,6 +42,8 @@ struct Env {
     git_author_email: const u8[:] = "", // GIT_AUTHOR_EMAIL
     agent_mode: bool = false,        // BD_AGENT_MODE=1 or CLAUDE_CODE: text is not wrapped
     beads_dir_set: bool = false,     // BEADS_DIR names the workspace
+    stdin_redirected: bool = false,  // standard input is a pipe or a file, not a terminal or device
+    claude_session_id: const u8[:] = "", // CLAUDE_SESSION_ID: the session that closes an issue
 }
 
 // What the process edge found on disk before the command ran.

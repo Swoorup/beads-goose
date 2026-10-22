@@ -14,17 +14,32 @@ import .cmd_create;
 import .cmd_show;
 import .cmd_export;
 import .cmd_init;
+import .cmd_dep;
+import .cmd_ready;
+import .cmd_import;
+import .cmd_update;
+import .cmd_close;
+import .cmd_list;
 
 // The commands this port implements, with their one-line summaries, in the
 // order help lists them.
 struct Command { name: const u8[:], short: const u8[:] }
 
 let COMMANDS = [
+    Command { name: "blocked", short: "Show blocked issues" },
+    Command { name: "children", short: "List child beads of a parent" },
+    Command { name: "close", short: "Close one or more issues" },
     Command { name: "create", short: "Create a new issue (or batch from markdown/graph JSON)" },
+    Command { name: "dep", short: "Manage dependencies" },
     Command { name: "export", short: "Export issues to JSONL format" },
     Command { name: "help", short: "Help about any command" },
+    Command { name: "import", short: "Import issues from a JSONL file or stdin into the database" },
     Command { name: "init", short: "Initialize bd in the current directory" },
+    Command { name: "list", short: "List issues" },
+    Command { name: "ready", short: "Show ready work (open, no active blockers)" },
+    Command { name: "reopen", short: "Reopen one or more closed issues" },
     Command { name: "show", short: "Show issue details" },
+    Command { name: "update", short: "Update one or more issues" },
     Command { name: "version", short: "Print version information" },
 ];
 
@@ -33,6 +48,7 @@ let COMMANDS = [
 fn command_name(word: const u8[:]) -> const u8[:] {
     if word == "new" { return "create"; }
     if word == "view" { return "show"; }
+    if word == "done" { return "close"; }
     for c in COMMANDS { if c.name == word { return c.name; } }
     return "";
 }
@@ -43,19 +59,54 @@ fn command_flags(name: const u8[:]) -> const flags::Spec[:] {
     if name == "show" { return SHOW_FLAGS; }
     if name == "export" { return EXPORT_FLAGS; }
     if name == "init" { return INIT_FLAGS; }
+    if name == "dep" { return DEP_FLAGS; }
+    if name == "ready" { return READY_FLAGS; }
+    if name == "blocked" { return BLOCKED_FLAGS; }
+    if name == "import" { return IMPORT_FLAGS; }
+    if name == "update" { return UPDATE_FLAGS; }
+    if name == "close" { return CLOSE_FLAGS; }
+    if name == "list" { return LIST_FLAGS; }
+    if name == "children" { return CHILDREN_FLAGS; }
+    if name == "reopen" { return REOPEN_FLAGS; }
     return VERSION_FLAGS;
 }
 
 // Whether a command works on an existing workspace's store, which it then
 // requires before it runs.
-fn uses_store(name: const u8[:]) -> bool { name == "show" || name == "export" }
+fn uses_store(name: const u8[:]) -> bool {
+    name == "show" || name == "export" || name == "dep" || name == "ready" || name == "blocked" ||
+        name == "import" || name == "update" || name == "close" || name == "reopen" || name == "list" ||
+        name == "children"
+}
 
 // The files a command line wants read before it runs, beside the store
-// (see Workspace.files): paths relative to the working directory.
-fn wanted_files(argv: const (const u8[:])[:], out: (const u8[:])[>..]&) {
+// (see Workspace.files): each path ended by a NUL byte, relative to the
+// working directory, with "-" for standard input. beads_dir is the
+// workspace's .beads directory, or "".
+fn wanted_files(argv: const (const u8[:])[:], beads_dir: const u8[:]) -> u8[>..] {
+    var out: u8[>..] = [];
+    fn want(path: const u8[:]) { out.append(path); out.push(0); }
     let at = flags::command_word(GLOBAL_FLAGS, argv);
-    guard at >= 0 else { return; }
-    if command_name(argv[at]) == "init" { out.push(".gitignore"); }
+    guard at >= 0 else { return out; }
+    let name = command_name(argv[at]);
+    if name == "init" { want(".gitignore"); }
+    guard name == "dep" || name == "import" else { return out; }
+    var rest: (const u8[:])[>..] = [];
+    for a, k in argv { if k != at { rest.push(a); } }
+    var given: flags::Flag[>..] = [];
+    var args: (const u8[:])[>..] = [];
+    let perr = flags::parse(command_flags(name), GLOBAL_FLAGS, rest, given, args);
+    guard perr.len == 0 else { return out; }
+    if name == "dep" {
+        let file = flags::get_string(given, "file");
+        if args.len > 0 && args[0] == "add" && file.len > 0 { want(file); }
+        return out;
+    }
+    let input = flags::get_string(given, "input");
+    if input.len > 0 { want(input); }
+    else if args.len > 0 { want(args[0]); }
+    else if beads_dir.len > 0 { want(import_default_path(beads_dir)); }
+    return out;
 }
 
 // Whether a command line records who is acting, and so needs git's
@@ -64,7 +115,7 @@ fn needs_identity(argv: const (const u8[:])[:]) -> bool {
     let at = flags::command_word(GLOBAL_FLAGS, argv);
     guard at >= 0 else { return false; }
     let name = command_name(argv[at]);
-    return name == "create";
+    return name == "create" || name == "update" || name == "close" || name == "reopen";
 }
 
 // Runs bd with the arguments after the program name, against what the edge
@@ -122,6 +173,15 @@ fn run(argv: const (const u8[:])[:], env: Env, ws: Workspace, out: u8[>..]&, err
     if name == "show" { return show_command(c); }
     if name == "export" { return export_command(c); }
     if name == "init" { return init_command(c); }
+    if name == "dep" { return dep_command(c); }
+    if name == "ready" { return ready_command(c); }
+    if name == "blocked" { return blocked_command(c); }
+    if name == "import" { return import_command(c); }
+    if name == "update" { return update_command(c); }
+    if name == "close" { return close_command(c, argv[at] == "done"); }
+    if name == "reopen" { return reopen_command(c); }
+    if name == "list" { return list_command(c); }
+    if name == "children" { return children_command(c); }
     return unknown_command(io, argv[at]);
 }
 

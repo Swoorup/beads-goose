@@ -310,8 +310,14 @@ fn create_command(c: Ctx&) -> i64 {
                                     " (expected 0-4 or P0-P4, not words like high/medium/low)"));
     }
 
+    // status.custom entries are "name" or "name:category"; only the name is a status.
+    var custom_entries: (const u8[:])[>..] = [];
+    config_list(c.store, "status.custom", custom_entries);
     var custom_statuses: (const u8[:])[>..] = [];
-    config_list(c.store, "status.custom", custom_statuses);
+    for e in custom_entries {
+        let colon = find(e, ":");
+        custom_statuses.push(if colon < 0 { e } else { e[..colon] });
+    }
     var custom_types: (const u8[:])[>..] = [];
     config_list(c.store, "types.custom", custom_types);
 

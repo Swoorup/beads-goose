@@ -25,7 +25,7 @@ $(BUILD)/build_info.goose: FORCE
 
 FORCE:
 
-$(BUILD)/unit: tests/unit.goose tests/check.goose $(SOURCES)
+$(BUILD)/unit: $(wildcard tests/*.goose) $(SOURCES)
 	@mkdir -p $(BUILD)
 	$(GOOSE) build -o $@ tests/unit.goose
 

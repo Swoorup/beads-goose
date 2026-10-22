@@ -11,6 +11,7 @@ import beads.types;
 import beads.list;
 import beads.metadata;
 import beads.lifecycle;
+import beads.feedback;
 import .check;
 
 fn issue(id: const u8[:], status: const u8[:], priority: i64, created: i64) -> types::Issue {
@@ -206,7 +207,39 @@ fn test_close_reopen() {
     check::expect(k3 == lifecycle::NOT_CLOSED, "reopen work in progress");
 }
 
+fn fed(id: const u8[:], t: const u8[:], max: i64) -> u8[>..] {
+    var out: u8[>..] = [];
+    feedback::id(out, id, t, max);
+    return out;
+}
+
+fn test_feedback() {
+    check::expect_eq(fed("t-1", "Fix it", 255), "t-1 — Fix it", "feedback id");
+    check::expect_eq(fed("t-1", "héllo world", 5), "t-1 — héll…", "a long title is cut by runes");
+    check::expect_eq(fed("t-1", "Fix it", 0), "t-1", "titles hidden");
+    check::expect_eq(fed("t-1", "", 255), "t-1", "no title");
+}
+
+fn statuses(value: const u8[:]) -> u8[>..] {
+    var out: list::CustomStatus[>..] = [];
+    let err = list::parse_custom_statuses(value, out);
+    if err.len > 0 { return err; }
+    var text: u8[>..] = [];
+    for c in out { format(text, c.name, "=", c.category, ";"); }
+    return text;
+}
+
+fn test_config() {
+    check::expect_eq(statuses(" review:wip, qa ,"), "review=wip;qa=unspecified;", "custom statuses");
+    check::expect_eq(statuses("x:bogus"), "invalid category \"bogus\" for status \"x\": must be one of active, wip, done, frozen", "a bad category");
+    check::expect_eq(statuses("open"), "custom status \"open\" collides with built-in status", "a built-in name");
+    check::expect(lifecycle::parse_priority("P1") == 1 && lifecycle::parse_priority(" 3 ") == 3 && lifecycle::parse_priority("2x") == 2, "priorities");
+    check::expect(lifecycle::parse_priority("9") == -1 && lifecycle::parse_priority("high") == -1 && lifecycle::parse_priority("") == -1, "not priorities");
+}
+
 fn run() {
+    test_config();
+    test_feedback();
     test_list();
     test_metadata();
     test_claim();

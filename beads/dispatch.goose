@@ -17,6 +17,9 @@ import .cmd_init;
 import .cmd_dep;
 import .cmd_ready;
 import .cmd_import;
+import .cmd_update;
+import .cmd_close;
+import .cmd_list;
 
 // The commands this port implements, with their one-line summaries, in the
 // order help lists them.
@@ -24,14 +27,19 @@ struct Command { name: const u8[:], short: const u8[:] }
 
 let COMMANDS = [
     Command { name: "blocked", short: "Show blocked issues" },
+    Command { name: "children", short: "List child beads of a parent" },
+    Command { name: "close", short: "Close one or more issues" },
     Command { name: "create", short: "Create a new issue (or batch from markdown/graph JSON)" },
     Command { name: "dep", short: "Manage dependencies" },
     Command { name: "export", short: "Export issues to JSONL format" },
     Command { name: "help", short: "Help about any command" },
     Command { name: "import", short: "Import issues from a JSONL file or stdin into the database" },
     Command { name: "init", short: "Initialize bd in the current directory" },
+    Command { name: "list", short: "List issues" },
     Command { name: "ready", short: "Show ready work (open, no active blockers)" },
+    Command { name: "reopen", short: "Reopen one or more closed issues" },
     Command { name: "show", short: "Show issue details" },
+    Command { name: "update", short: "Update one or more issues" },
     Command { name: "version", short: "Print version information" },
 ];
 
@@ -40,6 +48,7 @@ let COMMANDS = [
 fn command_name(word: const u8[:]) -> const u8[:] {
     if word == "new" { return "create"; }
     if word == "view" { return "show"; }
+    if word == "done" { return "close"; }
     for c in COMMANDS { if c.name == word { return c.name; } }
     return "";
 }
@@ -54,13 +63,20 @@ fn command_flags(name: const u8[:]) -> const flags::Spec[:] {
     if name == "ready" { return READY_FLAGS; }
     if name == "blocked" { return BLOCKED_FLAGS; }
     if name == "import" { return IMPORT_FLAGS; }
+    if name == "update" { return UPDATE_FLAGS; }
+    if name == "close" { return CLOSE_FLAGS; }
+    if name == "list" { return LIST_FLAGS; }
+    if name == "children" { return CHILDREN_FLAGS; }
+    if name == "reopen" { return REOPEN_FLAGS; }
     return VERSION_FLAGS;
 }
 
 // Whether a command works on an existing workspace's store, which it then
 // requires before it runs.
 fn uses_store(name: const u8[:]) -> bool {
-    name == "show" || name == "export" || name == "dep" || name == "ready" || name == "blocked" || name == "import"
+    name == "show" || name == "export" || name == "dep" || name == "ready" || name == "blocked" ||
+        name == "import" || name == "update" || name == "close" || name == "reopen" || name == "list" ||
+        name == "children"
 }
 
 // The files a command line wants read before it runs, beside the store
@@ -99,7 +115,7 @@ fn needs_identity(argv: const (const u8[:])[:]) -> bool {
     let at = flags::command_word(GLOBAL_FLAGS, argv);
     guard at >= 0 else { return false; }
     let name = command_name(argv[at]);
-    return name == "create";
+    return name == "create" || name == "update" || name == "close" || name == "reopen";
 }
 
 // Runs bd with the arguments after the program name, against what the edge
@@ -161,6 +177,11 @@ fn run(argv: const (const u8[:])[:], env: Env, ws: Workspace, out: u8[>..]&, err
     if name == "ready" { return ready_command(c); }
     if name == "blocked" { return blocked_command(c); }
     if name == "import" { return import_command(c); }
+    if name == "update" { return update_command(c); }
+    if name == "close" { return close_command(c, argv[at] == "done"); }
+    if name == "reopen" { return reopen_command(c); }
+    if name == "list" { return list_command(c); }
+    if name == "children" { return children_command(c); }
     return unknown_command(io, argv[at]);
 }
 

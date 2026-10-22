@@ -14,6 +14,7 @@ import beads.cli;
 import .check;
 import .graph_cases;
 import .import_cases;
+import .lifecycle_cases;
 
 fn test_sha256() {
     check::expect_eq(sha256::hex_digest(""), "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "sha256 of nothing");
@@ -214,5 +215,6 @@ fn main() {
     test_cli();
     graph_cases::run();
     import_cases::run();
+    lifecycle_cases::run();
     check::report("unit");
 }

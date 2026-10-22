@@ -152,6 +152,7 @@ fn main() {
     var agent: u8[>..] = [];
     var claude: u8[>..] = [];
     var beads_dir_env: u8[>..] = [];
+    var session: u8[>..] = [];
     var cwd: u8[>..] = [];
     var git_name: u8[>..] = [];
     var git_email: u8[>..] = [];
@@ -166,6 +167,7 @@ fn main() {
     if getenv("GIT_AUTHOR_EMAIL", author_email) { e.git_author_email = author_email; }
     e.agent_mode = (getenv("BD_AGENT_MODE", agent) && agent == "1") || getenv("CLAUDE_CODE", claude);
     e.beads_dir_set = getenv("BEADS_DIR", beads_dir_env);
+    if getenv("CLAUDE_SESSION_ID", session) { e.claude_session_id = session; }
 
     var beads_dir: u8[>..] = [];
     let in_git = discover(cwd, beads_dir_env, beads_dir);

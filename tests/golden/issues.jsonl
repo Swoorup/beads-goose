@@ -1,0 +1,74 @@
+# minimal open task
+{"id":"bd-1","title":"hello","status":"open","issue_type":"task","priority":2}
+# from beads' own issues.jsonl
+{"id":"bd-main-idj","title":"Pattern-collapse pass: mechanical cruft inventory and reduction","description":"Quantify near-duplicate functions, dead code, single-call helpers, single-impl abstractions, redundant defensive checks, and orphaned config keys across the CLI. Execute easiest 10-20% mechanically, run tests, stage but do not merge.","status":"in_progress","priority":2,"issue_type":"chore","owner":"maphew@gmail.com","created_at":"2026-04-18T16:19:12Z","created_by":"matt wilkie","updated_at":"2026-04-18T16:30:16Z","started_at":"2026-04-18T16:30:16Z","dependency_count":0,"dependent_count":0,"comment_count":0}
+# export record shape with every field
+{"_type":"issue","id":"bd-a3f2dd","title":"Everything","description":"desc","design":"des","acceptance_criteria":"ac","notes":"n","spec_id":"spec-1","status":"closed","priority":0,"issue_type":"feature","is_blocked":true,"assignee":"alice","owner":"a@b.c","estimated_minutes":0,"created_at":"2026-01-02T03:04:05.123456789Z","created_by":"bob","updated_at":"2026-01-03T00:00:00+02:00","started_at":"2026-01-02T05:00:00Z","closed_at":"2026-01-04T00:00:00.5-07:30","close_reason":"done","closed_by_session":"sess","lease_expires_at":"2026-01-05T00:00:00Z","heartbeat_at":"2026-01-05T00:00:01Z","lease_granted_node":"node-a","due_at":"2026-02-01T00:00:00Z","defer_until":"2026-01-10T00:00:00Z","external_ref":"gh-9","source_system":"github","metadata":{"files":["a.go","b<c>.go"],"n":1500.0,"nested":{"x":null,"t":true}},"compaction_level":2,"compacted_at":"2026-01-06T00:00:00Z","compacted_at_commit":"abc123","original_size":4096,"labels":["backend","p&l","ünï"],"dependencies":[{"id":"dep-1","issue_id":"bd-a3f2dd","depends_on_id":"bd-1","type":"blocks","created_at":"2026-01-02T03:04:05Z","created_by":"bob","metadata":"{\"gate\":\"all-children\"}","thread_id":"t1"},{"issue_id":"bd-a3f2dd","depends_on_id":"bd-2","type":"parent-child","created_at":"2026-01-02T03:04:05Z"}],"comments":[{"id":"c1","issue_id":"bd-a3f2dd","author":"carol","text":"looks good <3","created_at":"2026-01-02T03:04:05Z"}],"sender":"mayor","ephemeral":false,"no_history":false,"wisp_type":"","storage_class":"unversioned","pinned":true,"is_template":true,"bonded_from":[{"source_id":"proto-1","bond_type":"sequential"},{"source_id":"proto-2","bond_type":"parallel","bond_point":"bd-1"}],"await_type":"gh:pr","await_id":"42","timeout":3600000000000,"waiters":["a@x","b@y"],"source_formula":"f","source_location":"steps[0]","mol_type":"swarm","work_type":"open_competition","event_kind":"patrol.muted","actor":"agent://x","target":"bd-1","payload":"{\"k\":1}","dependency_count":1,"dependent_count":2,"comment_count":1,"wisp_plane":true}
+# string escaping: HTML, controls, U+2028, DEL, non-ASCII
+{"id":"e1","title":"a<b>&c \"q\" \\ \n\t\r\b\f\u0001\u001f \u007f \u2028\u2029 é 😀 \ud83d\ude00","status":"open","issue_type":"task","priority":1}
+# lone surrogates become U+FFFD
+{"id":"e2","title":"x \ud800 y \udc00 z \ud800\u0041","status":"open","issue_type":"task","priority":1}
+# invalid UTF-8 bytes become U+FFFD
+{"id":"e3","title":"bad � �� ��� end","status":"open","issue_type":"task","priority":1}
+# metadata null is kept as null
+{"id":"m1","title":"t","status":"open","issue_type":"task","priority":2,"metadata":null}
+# metadata whitespace is hashed as written and compacted on output
+{"id":"m2","title":"t","status":"open","issue_type":"task","priority":2,"metadata": { "a" : [ 1 , 2 ] , "s" : "x <y> \u0026  " } }
+# metadata scalar
+{"id":"m3","title":"t","status":"open","issue_type":"task","priority":2,"metadata":"just a string"}
+# null leaves values alone and clears pointers and lists
+{"id":"n1","title":"t","status":null,"priority":null,"issue_type":"bug","estimated_minutes":null,"closed_at":null,"external_ref":null,"labels":null,"created_at":null}
+# empty external_ref is kept: a pointer to empty
+{"id":"x1","title":"t","status":"open","issue_type":"task","priority":2,"external_ref":"","compacted_at_commit":""}
+# keys match without regard to case; unknown members are ignored
+{"ID":"k1","Title":"cased","STATUS":"open","Issue_Type":"task","priority":3,"unknown":{"deep":[1,2,{"x":"y"}]},"also":[]}
+# duplicate keys: the last wins
+{"id":"d1","title":"first","status":"open","issue_type":"task","priority":2,"title":"second","labels":["a"],"labels":["b","c"]}
+# legacy comment ids are numbers; legacy bond refs say proto_id
+{"id":"l1","title":"t","status":"open","issue_type":"task","priority":2,"comments":[{"id":7,"text":"x"},{"id":1.5e3,"text":"y"},{"id":true,"text":"z"},{"id":null,"text":"w"}],"bonded_from":[{"proto_id":"p1","bond_type":"sequential"},{"source_id":"s2","proto_id":"p2","bond_type":"root"}]}
+# timestamps: offsets, fractions, zero time, nine-plus digits
+{"id":"t1","title":"t","status":"open","issue_type":"task","priority":2,"created_at":"0001-01-01T00:00:00Z","updated_at":"2024-02-29T23:59:59.1000000009+00:00","started_at":"1969-12-31T23:59:59.999999999-08:00","due_at":"2026-06-01T12:00:00.010+14:00"}
+# custom status and type fail plain validation
+{"id":"v1","title":"t","status":"review","issue_type":"convoy","priority":2}
+# missing title
+{"id":"v2","status":"open","issue_type":"task","priority":2}
+# priority out of range
+{"id":"v3","title":"t","status":"open","issue_type":"task","priority":5}
+# negative estimate
+{"id":"v4","title":"t","status":"open","issue_type":"task","priority":2,"estimated_minutes":-1}
+# closed without closed_at
+{"id":"v5","title":"t","status":"closed","issue_type":"task","priority":2}
+# closed_at on an open issue
+{"id":"v6","title":"t","status":"open","issue_type":"task","priority":2,"closed_at":"2026-01-01T00:00:00Z"}
+# ephemeral and no_history together
+{"id":"v7","title":"t","status":"open","issue_type":"task","priority":2,"ephemeral":true,"no_history":true}
+# unknown storage class
+{"id":"v8","title":"t","status":"open","issue_type":"task","priority":2,"storage_class":"cold\"x"}
+# durable class on a wisp
+{"id":"v9","title":"t","status":"open","issue_type":"task","priority":2,"ephemeral":true,"storage_class":"versioned"}
+# ephemeral class without the flag
+{"id":"v10","title":"t","status":"open","issue_type":"task","priority":2,"storage_class":"ephemeral"}
+# assignee over 255 characters
+{"id":"v11","title":"t","status":"open","issue_type":"task","priority":2,"assignee":"éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé"}
+# title over 500 bytes
+{"id":"v12","title":"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx","status":"open","issue_type":"task","priority":2}
+# event type is built in
+{"id":"v13","title":"t","status":"hooked","issue_type":"event","priority":4}
+# year outside 0..9999 cannot be marshaled
+{"id":"y1","title":"t","status":"open","issue_type":"task","priority":2,"created_at":"0000-01-01T00:00:00+01:00"}
+# syntax error
+{"id":"s1","title":"t",}
+# trailing garbage
+{"id":"s2","title":"t"} x
+# type mismatch: priority as a string
+{"id":"s3","title":"t","priority":"2"}
+# type mismatch: priority with a fraction
+{"id":"s4","title":"t","priority":2.0}
+# type mismatch: title as a number
+{"id":"s5","title":5}
+# bad timestamp
+{"id":"s6","title":"t","created_at":"2026-01-02 03:04:05Z"}
+# bad escape
+{"id":"s7","title":"t \x"}
+# raw control character in a string
+{"id":"s8","title":"t "}

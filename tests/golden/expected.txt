@@ -1,0 +1,182 @@
+json	{"id":"bd-1","title":"hello","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}
+export	{"_type":"issue","id":"bd-1","title":"hello","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","dependency_count":1,"dependent_count":2,"comment_count":3}
+hash	bc564c5430ea617badca5cc67afb1589a1f7d0064d2c7f553c00ca7504b471ef
+valid	ok
+import	ok
+defaults	open task
+json	{"id":"bd-main-idj","title":"Pattern-collapse pass: mechanical cruft inventory and reduction","description":"Quantify near-duplicate functions, dead code, single-call helpers, single-impl abstractions, redundant defensive checks, and orphaned config keys across the CLI. Execute easiest 10-20% mechanically, run tests, stage but do not merge.","status":"in_progress","priority":2,"issue_type":"chore","owner":"maphew@gmail.com","created_at":"2026-04-18T16:19:12Z","created_by":"matt wilkie","updated_at":"2026-04-18T16:30:16Z","started_at":"2026-04-18T16:30:16Z"}
+export	{"_type":"issue","id":"bd-main-idj","title":"Pattern-collapse pass: mechanical cruft inventory and reduction","description":"Quantify near-duplicate functions, dead code, single-call helpers, single-impl abstractions, redundant defensive checks, and orphaned config keys across the CLI. Execute easiest 10-20% mechanically, run tests, stage but do not merge.","status":"in_progress","priority":2,"issue_type":"chore","owner":"maphew@gmail.com","created_at":"2026-04-18T16:19:12Z","created_by":"matt wilkie","updated_at":"2026-04-18T16:30:16Z","started_at":"2026-04-18T16:30:16Z","dependency_count":1,"dependent_count":2,"comment_count":3}
+hash	8ad140167a1220307fb389c7665ea7fe8655033daad5b882fbee8fc61dbb7a2a
+valid	ok
+import	ok
+defaults	in_progress chore
+json	{"id":"bd-a3f2dd","title":"Everything","description":"desc","design":"des","acceptance_criteria":"ac","notes":"n","spec_id":"spec-1","status":"closed","priority":0,"issue_type":"feature","is_blocked":true,"assignee":"alice","owner":"a@b.c","estimated_minutes":0,"created_at":"2026-01-02T03:04:05.123456789Z","created_by":"bob","updated_at":"2026-01-03T00:00:00+02:00","started_at":"2026-01-02T05:00:00Z","closed_at":"2026-01-04T00:00:00.5-07:30","close_reason":"done","closed_by_session":"sess","lease_expires_at":"2026-01-05T00:00:00Z","heartbeat_at":"2026-01-05T00:00:01Z","lease_granted_node":"node-a","due_at":"2026-02-01T00:00:00Z","defer_until":"2026-01-10T00:00:00Z","external_ref":"gh-9","source_system":"github","metadata":{"files":["a.go","b\u003cc\u003e.go"],"n":1500.0,"nested":{"x":null,"t":true}},"compaction_level":2,"compacted_at":"2026-01-06T00:00:00Z","compacted_at_commit":"abc123","original_size":4096,"labels":["backend","p\u0026l","ünï"],"dependencies":[{"id":"dep-1","issue_id":"bd-a3f2dd","depends_on_id":"bd-1","type":"blocks","created_at":"2026-01-02T03:04:05Z","created_by":"bob","metadata":"{\"gate\":\"all-children\"}","thread_id":"t1"},{"issue_id":"bd-a3f2dd","depends_on_id":"bd-2","type":"parent-child","created_at":"2026-01-02T03:04:05Z"}],"comments":[{"id":"c1","issue_id":"bd-a3f2dd","author":"carol","text":"looks good \u003c3","created_at":"2026-01-02T03:04:05Z"}],"sender":"mayor","storage_class":"unversioned","pinned":true,"is_template":true,"bonded_from":[{"source_id":"proto-1","bond_type":"sequential"},{"source_id":"proto-2","bond_type":"parallel","bond_point":"bd-1"}],"await_type":"gh:pr","await_id":"42","timeout":3600000000000,"waiters":["a@x","b@y"],"source_formula":"f","source_location":"steps[0]","mol_type":"swarm","work_type":"open_competition","event_kind":"patrol.muted","actor":"agent://x","target":"bd-1","payload":"{\"k\":1}"}
+export	{"_type":"issue","id":"bd-a3f2dd","title":"Everything","description":"desc","design":"des","acceptance_criteria":"ac","notes":"n","spec_id":"spec-1","status":"closed","priority":0,"issue_type":"feature","is_blocked":true,"assignee":"alice","owner":"a@b.c","estimated_minutes":0,"created_at":"2026-01-02T03:04:05.123456789Z","created_by":"bob","updated_at":"2026-01-03T00:00:00+02:00","started_at":"2026-01-02T05:00:00Z","closed_at":"2026-01-04T00:00:00.5-07:30","close_reason":"done","closed_by_session":"sess","lease_expires_at":"2026-01-05T00:00:00Z","heartbeat_at":"2026-01-05T00:00:01Z","lease_granted_node":"node-a","due_at":"2026-02-01T00:00:00Z","defer_until":"2026-01-10T00:00:00Z","external_ref":"gh-9","source_system":"github","metadata":{"files":["a.go","b\u003cc\u003e.go"],"n":1500.0,"nested":{"x":null,"t":true}},"compaction_level":2,"compacted_at":"2026-01-06T00:00:00Z","compacted_at_commit":"abc123","original_size":4096,"labels":["backend","p\u0026l","ünï"],"dependencies":[{"id":"dep-1","issue_id":"bd-a3f2dd","depends_on_id":"bd-1","type":"blocks","created_at":"2026-01-02T03:04:05Z","created_by":"bob","metadata":"{\"gate\":\"all-children\"}","thread_id":"t1"},{"issue_id":"bd-a3f2dd","depends_on_id":"bd-2","type":"parent-child","created_at":"2026-01-02T03:04:05Z"}],"comments":[{"id":"c1","issue_id":"bd-a3f2dd","author":"carol","text":"looks good \u003c3","created_at":"2026-01-02T03:04:05Z"}],"sender":"mayor","storage_class":"unversioned","pinned":true,"is_template":true,"bonded_from":[{"source_id":"proto-1","bond_type":"sequential"},{"source_id":"proto-2","bond_type":"parallel","bond_point":"bd-1"}],"await_type":"gh:pr","await_id":"42","timeout":3600000000000,"waiters":["a@x","b@y"],"source_formula":"f","source_location":"steps[0]","mol_type":"swarm","work_type":"open_competition","event_kind":"patrol.muted","actor":"agent://x","target":"bd-1","payload":"{\"k\":1}","dependency_count":1,"dependent_count":2,"comment_count":3}
+hash	d394c6cea44833b0f61b6cddfb7eb75be5ea63eac2b4fcd53b1144efcb6cd3ed
+valid	ok
+import	ok
+defaults	closed feature
+json	{"id":"e1","title":"a\u003cb\u003e\u0026c \"q\" \\ \n\t\r\b\f\u0001\u001f  \u2028\u2029 é 😀 😀","status":"open","priority":1,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}
+export	{"_type":"issue","id":"e1","title":"a\u003cb\u003e\u0026c \"q\" \\ \n\t\r\b\f\u0001\u001f  \u2028\u2029 é 😀 😀","status":"open","priority":1,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","dependency_count":1,"dependent_count":2,"comment_count":3}
+hash	3c341e28af0dafa5b468df0a7083dde7c37b0249f3449ee2a0fbbef23df32cab
+valid	ok
+import	ok
+defaults	open task
+json	{"id":"e2","title":"x � y � z �A","status":"open","priority":1,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}
+export	{"_type":"issue","id":"e2","title":"x � y � z �A","status":"open","priority":1,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","dependency_count":1,"dependent_count":2,"comment_count":3}
+hash	d554cc5494a1326379a6a6da7aaa4927ac19b9014911ac1f59ef4bdc3ae1344c
+valid	ok
+import	ok
+defaults	open task
+json	{"id":"e3","title":"bad � �� ��� end","status":"open","priority":1,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}
+export	{"_type":"issue","id":"e3","title":"bad � �� ��� end","status":"open","priority":1,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","dependency_count":1,"dependent_count":2,"comment_count":3}
+hash	bd20429246260b4a2e6050a0c28ff39135e418fc236f898c9cb28d4d78fbf36b
+valid	ok
+import	ok
+defaults	open task
+json	{"id":"m1","title":"t","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","metadata":null}
+export	{"_type":"issue","id":"m1","title":"t","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","metadata":null,"dependency_count":1,"dependent_count":2,"comment_count":3}
+hash	80b884b8ee88a347a04ea1e0aef48123ebd6502b6599cb50dddba3c6d38e7c8c
+valid	ok
+import	ok
+defaults	open task
+json	{"id":"m2","title":"t","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","metadata":{"a":[1,2],"s":"x \u003cy\u003e \u0026 \u2028"}}
+export	{"_type":"issue","id":"m2","title":"t","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","metadata":{"a":[1,2],"s":"x \u003cy\u003e \u0026 \u2028"},"dependency_count":1,"dependent_count":2,"comment_count":3}
+hash	f6095d97de1781d645b555b2b07ee4f7aa4b85fc3fa04f9ea7d3d9a9679b9089
+valid	ok
+import	ok
+defaults	open task
+json	{"id":"m3","title":"t","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","metadata":"just a string"}
+export	{"_type":"issue","id":"m3","title":"t","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","metadata":"just a string","dependency_count":1,"dependent_count":2,"comment_count":3}
+hash	a6f195106e24d07f110754c3acb627ed6ad755ee91e4386fae27c935a75a7329
+valid	ok
+import	ok
+defaults	open task
+json	{"id":"n1","title":"t","priority":0,"issue_type":"bug","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}
+export	{"_type":"issue","id":"n1","title":"t","priority":0,"issue_type":"bug","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","dependency_count":1,"dependent_count":2,"comment_count":3}
+hash	7da2d05ec227eb9eaf72eb831e335cd4f6184611fadb8a1eaa0149d3ff177ea8
+valid	invalid status: 
+import	invalid status: 
+defaults	open bug
+json	{"id":"x1","title":"t","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","external_ref":"","compacted_at_commit":""}
+export	{"_type":"issue","id":"x1","title":"t","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","external_ref":"","compacted_at_commit":"","dependency_count":1,"dependent_count":2,"comment_count":3}
+hash	5fbaf552a8838b5ca21fe40fa98e61d6da78930e19756dbbfbb270f12e40f879
+valid	ok
+import	ok
+defaults	open task
+json	{"id":"k1","title":"cased","status":"open","priority":3,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}
+export	{"_type":"issue","id":"k1","title":"cased","status":"open","priority":3,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","dependency_count":1,"dependent_count":2,"comment_count":3}
+hash	7ec2bcbd0c4b5ad6333166dc1219f4cebfcdff308ec4c9a63a12d2377e9f49d6
+valid	ok
+import	ok
+defaults	open task
+json	{"id":"d1","title":"second","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","labels":["b","c"]}
+export	{"_type":"issue","id":"d1","title":"second","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","labels":["b","c"],"dependency_count":1,"dependent_count":2,"comment_count":3}
+hash	fbccf59e771862a1bc8e9eff230a97388a092cb8b42d4c9616aa84f74a870e2e
+valid	ok
+import	ok
+defaults	open task
+json	{"id":"l1","title":"t","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","comments":[{"id":"7","issue_id":"","author":"","text":"x","created_at":"0001-01-01T00:00:00Z"},{"id":"1.5e3","issue_id":"","author":"","text":"y","created_at":"0001-01-01T00:00:00Z"},{"id":"","issue_id":"","author":"","text":"z","created_at":"0001-01-01T00:00:00Z"},{"id":"","issue_id":"","author":"","text":"w","created_at":"0001-01-01T00:00:00Z"}],"bonded_from":[{"source_id":"p1","bond_type":"sequential"},{"source_id":"s2","bond_type":"root"}]}
+export	{"_type":"issue","id":"l1","title":"t","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","comments":[{"id":"7","issue_id":"","author":"","text":"x","created_at":"0001-01-01T00:00:00Z"},{"id":"1.5e3","issue_id":"","author":"","text":"y","created_at":"0001-01-01T00:00:00Z"},{"id":"","issue_id":"","author":"","text":"z","created_at":"0001-01-01T00:00:00Z"},{"id":"","issue_id":"","author":"","text":"w","created_at":"0001-01-01T00:00:00Z"}],"bonded_from":[{"source_id":"p1","bond_type":"sequential"},{"source_id":"s2","bond_type":"root"}],"dependency_count":1,"dependent_count":2,"comment_count":3}
+hash	849a92c6deab45be4f5455bdfe94403762526cec5eea21e4fc0866b0d464cd46
+valid	ok
+import	ok
+defaults	open task
+json	{"id":"t1","title":"t","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"2024-02-29T23:59:59.1Z","started_at":"1969-12-31T23:59:59.999999999-08:00","due_at":"2026-06-01T12:00:00.01+14:00"}
+export	{"_type":"issue","id":"t1","title":"t","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"2024-02-29T23:59:59.1Z","started_at":"1969-12-31T23:59:59.999999999-08:00","due_at":"2026-06-01T12:00:00.01+14:00","dependency_count":1,"dependent_count":2,"comment_count":3}
+hash	5fbaf552a8838b5ca21fe40fa98e61d6da78930e19756dbbfbb270f12e40f879
+valid	ok
+import	ok
+defaults	open task
+json	{"id":"v1","title":"t","status":"review","priority":2,"issue_type":"convoy","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}
+export	{"_type":"issue","id":"v1","title":"t","status":"review","priority":2,"issue_type":"convoy","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","dependency_count":1,"dependent_count":2,"comment_count":3}
+hash	c0e00f65f46a18470d97dc3adcc469d1dac81f7ad24ea128f32d23022f0cab70
+valid	invalid status: review
+import	invalid status: review
+defaults	review convoy
+json	{"id":"v2","title":"","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}
+export	{"_type":"issue","id":"v2","title":"","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","dependency_count":1,"dependent_count":2,"comment_count":3}
+hash	474e9bf377c0c58bb9982d553d4ef697643bb543a1089e045f8a0bd07be14415
+valid	title is required
+import	title is required
+defaults	open task
+json	{"id":"v3","title":"t","status":"open","priority":5,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}
+export	{"_type":"issue","id":"v3","title":"t","status":"open","priority":5,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","dependency_count":1,"dependent_count":2,"comment_count":3}
+hash	7886c2c2216c92ad8cab37022b5843ec90a9b753540694a5f6512593963e33bf
+valid	priority must be between 0 and 4 (got 5)
+import	priority must be between 0 and 4 (got 5)
+defaults	open task
+json	{"id":"v4","title":"t","status":"open","priority":2,"issue_type":"task","estimated_minutes":-1,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}
+export	{"_type":"issue","id":"v4","title":"t","status":"open","priority":2,"issue_type":"task","estimated_minutes":-1,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","dependency_count":1,"dependent_count":2,"comment_count":3}
+hash	5fbaf552a8838b5ca21fe40fa98e61d6da78930e19756dbbfbb270f12e40f879
+valid	estimated_minutes cannot be negative
+import	estimated_minutes cannot be negative
+defaults	open task
+json	{"id":"v5","title":"t","status":"closed","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}
+export	{"_type":"issue","id":"v5","title":"t","status":"closed","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","dependency_count":1,"dependent_count":2,"comment_count":3}
+hash	69d2983cace362e8d0682bf1b79fa3df6c3bca8ebbbf67087f4631e2976686da
+valid	closed issues must have closed_at timestamp
+import	closed issues must have closed_at timestamp
+defaults	closed task
+json	{"id":"v6","title":"t","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","closed_at":"2026-01-01T00:00:00Z"}
+export	{"_type":"issue","id":"v6","title":"t","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","closed_at":"2026-01-01T00:00:00Z","dependency_count":1,"dependent_count":2,"comment_count":3}
+hash	5fbaf552a8838b5ca21fe40fa98e61d6da78930e19756dbbfbb270f12e40f879
+valid	non-closed issues cannot have closed_at timestamp
+import	non-closed issues cannot have closed_at timestamp
+defaults	open task
+json	{"id":"v7","title":"t","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","ephemeral":true,"no_history":true}
+export	{"_type":"issue","id":"v7","title":"t","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","ephemeral":true,"no_history":true,"dependency_count":1,"dependent_count":2,"comment_count":3,"wisp_plane":true}
+hash	5fbaf552a8838b5ca21fe40fa98e61d6da78930e19756dbbfbb270f12e40f879
+valid	ephemeral and no_history are mutually exclusive
+import	ok
+defaults	open task
+json	{"id":"v8","title":"t","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","storage_class":"cold\"x"}
+export	{"_type":"issue","id":"v8","title":"t","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","storage_class":"cold\"x","dependency_count":1,"dependent_count":2,"comment_count":3}
+hash	5fbaf552a8838b5ca21fe40fa98e61d6da78930e19756dbbfbb270f12e40f879
+valid	invalid storage class "cold\"x" (must be versioned, unversioned, or ephemeral)
+import	ok
+defaults	open task
+json	{"id":"v9","title":"t","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","ephemeral":true,"storage_class":"versioned"}
+export	{"_type":"issue","id":"v9","title":"t","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","ephemeral":true,"storage_class":"versioned","dependency_count":1,"dependent_count":2,"comment_count":3}
+hash	5fbaf552a8838b5ca21fe40fa98e61d6da78930e19756dbbfbb270f12e40f879
+valid	storage class "versioned" conflicts with ephemeral/no_history (wisp-plane records are storage class ephemeral)
+import	ok
+defaults	open task
+json	{"id":"v10","title":"t","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","storage_class":"ephemeral"}
+export	{"_type":"issue","id":"v10","title":"t","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","storage_class":"ephemeral","dependency_count":1,"dependent_count":2,"comment_count":3}
+hash	5fbaf552a8838b5ca21fe40fa98e61d6da78930e19756dbbfbb270f12e40f879
+valid	storage class ephemeral requires the ephemeral flag (create with --ephemeral)
+import	ok
+defaults	open task
+json	{"id":"v11","title":"t","status":"open","priority":2,"issue_type":"task","assignee":"éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}
+export	{"_type":"issue","id":"v11","title":"t","status":"open","priority":2,"issue_type":"task","assignee":"éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","dependency_count":1,"dependent_count":2,"comment_count":3}
+hash	eba01b83cd9037ac994afc80e976c7bd66020f79d50e7e36e4b4c117203fc332
+valid	field exceeds maximum length: assignee is 256 characters (max 255)
+import	field exceeds maximum length: assignee is 256 characters (max 255)
+defaults	open task
+json	{"id":"v12","title":"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}
+export	{"_type":"issue","id":"v12","title":"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx","status":"open","priority":2,"issue_type":"task","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","dependency_count":1,"dependent_count":2,"comment_count":3}
+hash	297f8cbffb42806743a092f626f18067435b6caa6c74c66d34b1dd78fb715d9c
+valid	title must be 500 characters or less (got 501)
+import	title must be 500 characters or less (got 501)
+defaults	open task
+json	{"id":"v13","title":"t","status":"hooked","priority":4,"issue_type":"event","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}
+export	{"_type":"issue","id":"v13","title":"t","status":"hooked","priority":4,"issue_type":"event","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z","dependency_count":1,"dependent_count":2,"comment_count":3}
+hash	c17f37834eb79c5e16666c0492232407d7fbce3263bd0da52291df611690043b
+valid	ok
+import	ok
+defaults	hooked event
+json	{"id":"y1","title":"t","status":"open","priority":2,"issue_type":"task","created_at":"0000-01-01T00:00:00+01:00","updated_at":"0001-01-01T00:00:00Z"}
+export	{"_type":"issue","id":"y1","title":"t","status":"open","priority":2,"issue_type":"task","created_at":"0000-01-01T00:00:00+01:00","updated_at":"0001-01-01T00:00:00Z","dependency_count":1,"dependent_count":2,"comment_count":3}
+hash	5fbaf552a8838b5ca21fe40fa98e61d6da78930e19756dbbfbb270f12e40f879
+valid	ok
+import	ok
+defaults	open task
+error
+error
+error
+error
+error
+error
+error
+error

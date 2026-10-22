@@ -393,3 +393,103 @@ fn format_indented(out: u8[>..]&, compact: const u8[:], indent: const u8[:] = " 
         }
     }
 }
+
+// --- maps, generically -----------------------------------------------------------
+
+// Appends compact JSON re-encoded as Go re-encodes a value it has decoded
+// into interface{}: every object's keys in byte order, at every level, and
+// numbers through float64. `key` and `value`, when key is not empty, join
+// the top-level object as one more member (value as compact JSON). Text
+// that is not JSON is appended as it is.
+fn format_resorted(out: u8[>..]&, compact: const u8[:], key: const u8[:] = "", value: const u8[:] = "") {
+    var doc: json::Node[>..] = [];
+    var decoded: u8[>..] = [];
+    let root, err = json::parse(compact, doc, decoded);
+    guard root else { out.append(compact); return; }
+    var order: i64[>..<] = [];
+    var nodes: (json::Node&)[>..] = [];
+    // Every node gets an index, so sorting moves indices, not nodes.
+    for &n in doc { nodes.push(n); }
+    emit_sorted(out, nodes, 0, order, key, value);
+}
+
+// Go's float64 formatting for a JSON number: integers as integers, others
+// in the shortest form that reads back.
+fn format_float(out: u8[>..]&, v: f64) {
+    let i = v as! i64;
+    if (i as f64) == v && v < 1e21 && v > -1e21 {
+        format(out, i);
+    } else {
+        json::format_number(out, v);
+    }
+}
+
+// The node at index n of nodes (in document order) written out sorted.
+// order is scratch shared by the whole walk.
+recursive fn emit_sorted(out: u8[>..]&, nodes: (json::Node&)[:], n: i64, order: i64[>..<]&,
+                         key: const u8[:], value: const u8[:]) {
+    let node .= nodes[n];
+    match node.val {
+        Null => out.append("null"),
+        Bool b => out.append(if b.v { "true" } else { "false" }),
+        Int x => format_float(out, x.v as f64),
+        Num x => format_float(out, x.v),
+        Str s => format_string(out, s.s),
+        Arr a => {
+            out.push('[');
+            let mark = order.len;
+            child_indices(nodes, n, order);
+            let end = order.len;
+            for k in mark..end {
+                if k > mark { out.push(','); }
+                emit_sorted(out, nodes, order[k], order, "", "");
+            }
+            order.resize(mark);
+            out.push(']');
+        },
+        Obj o => {
+            out.push('{');
+            let mark = order.len;
+            child_indices(nodes, n, order);
+            let end = order.len;
+            sort(order[mark..end]) { a, b => compare(nodes[a].key, nodes[b].key) < 0 };
+            var first = true;
+            var extra = key.len > 0;
+            for k in mark..end {
+                let child_key = nodes[order[k]].key;
+                if extra && compare(key, child_key) < 0 {
+                    if !first { out.push(','); }
+                    format_string(out, key); out.push(':'); out.append(value);
+                    extra = false;
+                    first = false;
+                }
+                if !first { out.push(','); }
+                first = false;
+                format_string(out, child_key);
+                out.push(':');
+                emit_sorted(out, nodes, order[k], order, "", "");
+            }
+            if extra {
+                if !first { out.push(','); }
+                format_string(out, key); out.push(':'); out.append(value);
+            }
+            order.resize(mark);
+            out.push('}');
+        },
+    }
+}
+
+// The indices of node n's children, in document order, onto order. Nodes
+// are in document order, so a child is found by walking siblings from the
+// first, and its index by its distance from the root.
+fn child_indices(nodes: (json::Node&)[:], n: i64, order: i64[>..<]&) {
+    var c = nodes[n].first;
+    var at = n + 1;
+    while c {
+        // Find c's index: it is at or after `at`.
+        while !(nodes[at] .== c) { at++; }
+        order.push(at);
+        c .= c.next;
+        at++;
+    }
+}

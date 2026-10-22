@@ -14,6 +14,7 @@ import .idgen;
 import .store;
 import .markdown;
 import .templates;
+import .graph;
 import .cli;
 import .cmd_version;
 import .cmd_create;

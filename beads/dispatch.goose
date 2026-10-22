@@ -14,17 +14,24 @@ import .cmd_create;
 import .cmd_show;
 import .cmd_export;
 import .cmd_init;
+import .cmd_update;
+import .cmd_close;
+import .cmd_list;
 
 // The commands this port implements, with their one-line summaries, in the
 // order help lists them.
 struct Command { name: const u8[:], short: const u8[:] }
 
 let COMMANDS = [
+    Command { name: "close", short: "Close one or more issues" },
     Command { name: "create", short: "Create a new issue (or batch from markdown/graph JSON)" },
     Command { name: "export", short: "Export issues to JSONL format" },
     Command { name: "help", short: "Help about any command" },
     Command { name: "init", short: "Initialize bd in the current directory" },
+    Command { name: "list", short: "List issues" },
+    Command { name: "reopen", short: "Reopen one or more closed issues" },
     Command { name: "show", short: "Show issue details" },
+    Command { name: "update", short: "Update one or more issues" },
     Command { name: "version", short: "Print version information" },
 ];
 
@@ -33,6 +40,7 @@ let COMMANDS = [
 fn command_name(word: const u8[:]) -> const u8[:] {
     if word == "new" { return "create"; }
     if word == "view" { return "show"; }
+    if word == "done" { return "close"; }
     for c in COMMANDS { if c.name == word { return c.name; } }
     return "";
 }
@@ -43,12 +51,19 @@ fn command_flags(name: const u8[:]) -> const flags::Spec[:] {
     if name == "show" { return SHOW_FLAGS; }
     if name == "export" { return EXPORT_FLAGS; }
     if name == "init" { return INIT_FLAGS; }
+    if name == "update" { return UPDATE_FLAGS; }
+    if name == "close" { return CLOSE_FLAGS; }
+    if name == "list" { return LIST_FLAGS; }
+    if name == "reopen" { return REOPEN_FLAGS; }
     return VERSION_FLAGS;
 }
 
 // Whether a command works on an existing workspace's store, which it then
 // requires before it runs.
-fn uses_store(name: const u8[:]) -> bool { name == "show" || name == "export" }
+fn uses_store(name: const u8[:]) -> bool {
+    name == "show" || name == "export" || name == "update" || name == "close" || name == "reopen" ||
+        name == "list"
+}
 
 // The files a command line wants read before it runs, beside the store
 // (see Workspace.files): paths relative to the working directory.
@@ -64,7 +79,7 @@ fn needs_identity(argv: const (const u8[:])[:]) -> bool {
     let at = flags::command_word(GLOBAL_FLAGS, argv);
     guard at >= 0 else { return false; }
     let name = command_name(argv[at]);
-    return name == "create";
+    return name == "create" || name == "update" || name == "close" || name == "reopen";
 }
 
 // Runs bd with the arguments after the program name, against what the edge
@@ -122,6 +137,10 @@ fn run(argv: const (const u8[:])[:], env: Env, ws: Workspace, out: u8[>..]&, err
     if name == "show" { return show_command(c); }
     if name == "export" { return export_command(c); }
     if name == "init" { return init_command(c); }
+    if name == "update" { return update_command(c); }
+    if name == "close" { return close_command(c, argv[at] == "done"); }
+    if name == "reopen" { return reopen_command(c); }
+    if name == "list" { return list_command(c); }
     return unknown_command(io, argv[at]);
 }
 

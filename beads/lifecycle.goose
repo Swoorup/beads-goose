@@ -245,6 +245,20 @@ fn opt_text_eq(a: OptText, b: OptText) -> bool { a.has == b.has && (!a.has || a.
 
 fn opt_time_eq(a: OptTime, b: OptTime) -> bool { a.has == b.has && (!a.has || gotime::equal(a.v, b.v)) }
 
+// A copy of s in the arena. What goes into the arena is copied there, so
+// that it holds no views of the patch or of the issues it was given.
+fn own(a: types::Arena&, s: const u8[:]) -> const u8[:] {
+    let first = a.text.len;
+    a.text.append(s);
+    return a.text[first..];
+}
+
+fn own_dep(a: types::Arena&, d: const Dependency&) -> Dependency {
+    Dependency { id: own(a, d.id), issue_id: own(a, d.issue_id), depends_on_id: own(a, d.depends_on_id),
+                 dep_type: own(a, d.dep_type), created_at: d.created_at, created_by: own(a, d.created_by),
+                 metadata: own(a, d.metadata), thread_id: own(a, d.thread_id) }
+}
+
 // The labels after the edits, sorted: replaced by set_labels if given, then
 // add_labels added and remove_labels removed. Empty labels are dropped.
 fn edited_labels(current: Strings, p: const Patch&, a: types::Arena&) -> Strings, bool {
@@ -253,7 +267,7 @@ fn edited_labels(current: Strings, p: const Patch&, a: types::Arena&) -> Strings
     if p.set_labels.has { for l in p.set_labels.v { put(l); } } else { for l in current { put(l); } }
     for l in p.add_labels { put(l); }
     let first = a.strings.len;
-    for l in target { if !contains(p.remove_labels, l) { a.strings.push(l); } }
+    for l in target { if !contains(p.remove_labels, l) { a.strings.push(own(a, l)); } }
     let labels = a.strings[first..];
     sort(labels) { x, y => compare(x, y) < 0 };
     var same = labels.len == current.len;
@@ -274,10 +288,11 @@ fn reparented(i: Issue, parent: const u8[:], ctx: const Ctx&, a: types::Arena&) 
     }
     if (parent.len == 0 && parents == 0) || (parents == 1 && has_target) { return i.dependencies, false; }
     let first = a.deps.len;
-    for d in i.dependencies { if d.dep_type != types::DEP_PARENT_CHILD { a.deps.push(d); } }
+    for d in i.dependencies { if d.dep_type != types::DEP_PARENT_CHILD { a.deps.push(own_dep(a, d)); } }
     if parent.len > 0 {
-        a.deps.push(Dependency { issue_id: i.id, depends_on_id: parent, dep_type: types::DEP_PARENT_CHILD,
-                                 created_at: ctx.now, created_by: ctx.actor, metadata: "{}", .. });
+        let edge = Dependency { issue_id: i.id, depends_on_id: parent, dep_type: types::DEP_PARENT_CHILD,
+                                created_at: ctx.now, created_by: ctx.actor, .. };
+        a.deps.push(own_dep(a, edge));
     }
     return a.deps[first..], true;
 }

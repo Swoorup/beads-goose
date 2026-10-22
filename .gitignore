@@ -1,3 +1,6 @@
+/bd
+/build/
+/.toolchain/
 .cache/
 diff-out/
 __pycache__/

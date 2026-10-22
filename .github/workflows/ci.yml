@@ -1,0 +1,43 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache the pinned goose compiler
+        uses: actions/cache@v4
+        with:
+          path: .toolchain/goose
+          key: goose-${{ runner.os }}-${{ hashFiles('scripts/install-goose.sh') }}
+
+      - name: Build the goose compiler
+        run: |
+          sudo apt-get install -y ninja-build
+          scripts/install-goose.sh
+
+      - name: Build bd
+        run: make bd
+
+      - name: Unit and golden tests
+        run: make test
+
+  # tests/golden/expected.txt must be what beads' own Go types say about the
+  # corpus: regenerate it from upstream and fail on any difference.
+  golden-upstream:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - name: Regenerate the golden expectations from beads
+        run: scripts/golden.sh
+      - name: Check they are unchanged
+        run: git diff --exit-code tests/golden/expected.txt

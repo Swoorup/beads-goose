@@ -1,0 +1,10 @@
+// The beads library: the issue model, its Go-compatible JSON, and the bd
+// command line. Importing this package entry brings in every module; a
+// program may also import just the modules it uses, as beads.types.
+
+import .sha256;
+import .gotime;
+import .gojson;
+import .types;
+import .issue_json;
+import .cli;

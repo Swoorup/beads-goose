@@ -59,6 +59,7 @@ These become placeholders before diffing (`bdiff/normalize.py`):
 | durations like `12ms` | `<DUR>` |
 | workspace, home, temp root | `<WS>`, `<HOME>`, `<ROOT>` |
 | `"revision": "-648…"` | `"revision": "<REV>"` |
+| build field of `bd version` (`(c1c4b642a: HEAD@…)`, JSON `branch`/`build`/`commit`) | `<BUILD>` |
 
 Numbered placeholders go by order of first appearance, so they still check that
 values line up: the issue created first is `<ID:1>` on both sides, and a later
@@ -83,6 +84,10 @@ have come up so far, and each case handles them explicitly:
   way, since stored state is a set of records.
 
 Run the check several times after adding a case; one green run is not proof.
+
+Shared steps can live in `cases/lib/*.inc` and be sourced with
+`. "$(dirname "$0")/lib/<name>.inc"`; the `json_contract_*` cases do this to
+replay upstream's published JSON contract sequence in flat and envelope mode.
 
 Case-specific normalization goes in a directive, written against the
 normalized text:

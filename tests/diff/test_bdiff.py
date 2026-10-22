@@ -61,6 +61,13 @@ class Transcript(unittest.TestCase):
         )
         self.assertIn('at <WS> "revision": "<REV>" v<N>\n', transcript(run, "test", TODAY))
 
+    def test_masks_build_identity_but_not_version(self):
+        run = make_run(Step(("version",), ".", 0,
+                            'bd version 1.3.1 (c1c4b642a: HEAD@c1c4b642ac1c)\n"build": "c1c4b642a"\n', ""))
+        text = transcript(run, "test", TODAY)
+        self.assertIn('bd version 1.3.1 (<BUILD>)\n"build": "<BUILD>"\n', text)
+        self.assertNotIn("HEX", text)
+
     def test_marks_missing_trailing_newline_and_omits_empty_streams(self):
         text = render(make_run(Step(("x",), ".", 1, "", "boom")))
         self.assertIn("--- exit 1\n--- stderr\nboom\n\\ no newline at end\n", text)

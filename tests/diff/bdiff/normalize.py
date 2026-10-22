@@ -33,6 +33,11 @@ DURATION = re.compile(r"\b\d+(?:\.\d+)?(?:ns|µs|us|ms|s)\b")
 # Optimistic-concurrency token: a random int64 rewritten on every write.
 REVISION = re.compile(r'("revision":\s*")-?\d+(")')
 UNORDERED_HEADER = "--- unordered "
+# Build identity says which binary this is, not how it behaves: upstream prints
+# `bd version 1.3.1 (c1c4b642a: HEAD@c1c4b642ac1c)`, a port its own tag. The
+# version number itself is still compared.
+VERSION_BUILD = re.compile(r"^(bd version \S+) \(.*\)$", re.MULTILINE)
+BUILD_FIELDS = re.compile(r'("(?:branch|build|commit)":\s*)"[^"]*"')
 
 
 def number_by_appearance(pattern: re.Pattern[str], label: str) -> Transform:
@@ -84,6 +89,8 @@ def normalizer(run: Run, id_prefix: str, today: date) -> Transform:
         lambda text: ANSI.sub("", text),
         # Longest path first: <WS> and <HOME> live under <ROOT>.
         *(literal(real, ph) for real, ph in sorted(run.paths, key=lambda p: -len(p[0]))),
+        lambda text: VERSION_BUILD.sub(r"\1 (<BUILD>)", text),
+        lambda text: BUILD_FIELDS.sub(r'\1"<BUILD>"', text),
         number_by_appearance(UUID, "UUID"),
         clock_timestamps(today),
         number_by_appearance(id_pattern, "ID"),

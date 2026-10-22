@@ -6,5 +6,8 @@ deps_ready
 errors
 import_export
 init_default
+json_contract_envelope
+json_contract_flat
 labels_comments
 update_lifecycle
+version_help

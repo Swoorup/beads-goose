@@ -37,21 +37,12 @@ Installing Beads agent skill...
 
 ✓ bd initialized successfully!
 
-  Backend: dolt
-  Mode: embedded
-  Database: test
+  Backend: <BACKEND>
   Issue prefix: test
   Issues will be named: test-<hash> (e.g., <ID:1>)
 
 Run bd quickstart to get started.
 
---- stderr
-
-⚠ No Dolt remote configured
-  Issues are stored in local Dolt. .beads/issues.jsonl is an export,
-  not cross-machine sync or the source of truth.
-  To enable durable sync, add a git origin and then run:
-    bd dolt push
 === step 2 ===
 $ bd info
 --- exit 0
@@ -59,7 +50,7 @@ $ bd info
 
 Beads Database Information
 ===========================
-Database: <WS>/.beads/embeddeddolt
+Database: <WS>/.beads/<STORE>
 Mode: direct
 
 Issue Count: 0
@@ -70,7 +61,7 @@ $ bd where
 --- stdout
 <WS>/.beads
   prefix: test
-  database: <WS>/.beads/embeddeddolt
+  database: <WS>/.beads/<STORE>
 === snapshot: bd export ===
 $ bd export
 --- exit 0
@@ -88,8 +79,8 @@ $ bd export
 .beads/.local_version (0600)
 .beads/README.md (0644)
 .beads/config.yaml (0600)
-.beads/embeddeddolt.gate.lock (0600)
-.beads/embeddeddolt/
+.beads/<STORE>.gate.lock (0600)
+.beads/<STORE>/
 .beads/hooks/
 .beads/hooks/post-checkout (0755)
 .beads/hooks/post-merge (0755)
@@ -436,7 +427,7 @@ bd create "Try out Beads"
 # Secret keys (stored in this file but prefer env vars to avoid git exposure):
 # - linear.api_key  → use LINEAR_API_KEY env var instead
 # - github.token    → use GITHUB_TOKEN env var instead
-=== snapshot: file .beads/embeddeddolt.gate.lock ===
+=== snapshot: file .beads/<STORE>.gate.lock ===
 === snapshot: file .beads/hooks/post-checkout ===
 #!/usr/bin/env sh
 # --- BEGIN BEADS INTEGRATION v1.3.0 ---
@@ -739,10 +730,7 @@ fi
 # --- END BEADS INTEGRATION v1.3.0 ---
 === snapshot: file .beads/metadata.json ===
 {
-  "database": "dolt",
-  "backend": "dolt",
-  "dolt_mode": "embedded",
-  "dolt_database": "test",
+  "backend": "<BACKEND>",
   "project_id": "<UUID:1>"
 }
 \ no newline at end

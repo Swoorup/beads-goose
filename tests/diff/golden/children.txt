@@ -218,8 +218,8 @@ $ bd export
 .beads/.local_version (0600)
 .beads/README.md (0644)
 .beads/config.yaml (0600)
-.beads/embeddeddolt.gate.lock (0600)
-.beads/embeddeddolt/
+.beads/<STORE>.gate.lock (0600)
+.beads/<STORE>/
 .beads/last-touched (0600)
 .beads/metadata.json (0600)
 .git/
@@ -464,15 +464,12 @@ bd create "Try out Beads"
 # Secret keys (stored in this file but prefer env vars to avoid git exposure):
 # - linear.api_key  → use LINEAR_API_KEY env var instead
 # - github.token    → use GITHUB_TOKEN env var instead
-=== snapshot: file .beads/embeddeddolt.gate.lock ===
+=== snapshot: file .beads/<STORE>.gate.lock ===
 === snapshot: file .beads/last-touched ===
 <ID:1>
 === snapshot: file .beads/metadata.json ===
 {
-  "database": "dolt",
-  "backend": "dolt",
-  "dolt_mode": "embedded",
-  "dolt_database": "test",
+  "backend": "<BACKEND>",
   "project_id": "<UUID:1>"
 }
 \ no newline at end

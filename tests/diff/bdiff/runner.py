@@ -22,7 +22,7 @@ SHIM_DIR = Path(__file__).with_name("bin")
 # Directories whose contents are engine internals: only their presence is
 # compared. Everything else under the workspace is listed and, if it is small
 # text, compared byte for byte.
-OPAQUE_DIRS = (".git", ".beads/embeddeddolt", ".beads/dolt")
+OPAQUE_DIRS = (".git", ".beads/embeddeddolt", ".beads/dolt", ".beads/goose")
 MAX_TEXT_FILE = 64 * 1024
 
 # A fixed, minimal environment so runs are reproducible across machines and

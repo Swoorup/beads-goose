@@ -1,0 +1,61 @@
+name: differential
+
+# Runs the same command scripts against upstream beads and the goose port and
+# diffs everything they print and store. See tests/diff/README.md.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Harness unit tests
+        run: python3 -m unittest discover -s tests/diff -p 'test_*.py'
+
+      - name: Cache upstream bd
+        uses: actions/cache@v4
+        with:
+          path: .cache/bdiff
+          key: bdiff-upstream-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tests/diff/UPSTREAM_VERSION') }}
+
+      - name: Fetch upstream bd
+        id: upstream
+        run: echo "bd=$(tests/diff/fetch-upstream.sh)" >> "$GITHUB_OUTPUT"
+
+      # Upstream against its own goldens: fails if a golden is stale or a case
+      # observes output whose order or content upstream leaves nondeterministic.
+      - name: Goldens match upstream
+        run: python3 tests/diff/run.py check --impl "${{ steps.upstream.outputs.bd }}" --out diff-out/upstream
+
+      # The port, like upstream, omits version --json's branch key on a
+      # detached HEAD, which is how actions/checkout leaves pull requests.
+      - name: Build port
+        id: port
+        run: |
+          git checkout -q -B bdiff-ci
+          echo "bd=$(tests/diff/build-port.sh)" >> "$GITHUB_OUTPUT"
+
+      - name: Port matches goldens
+        if: steps.port.outputs.bd != ''
+        run: python3 tests/diff/run.py check --impl "${{ steps.port.outputs.bd }}" --xfail tests/diff/xfail.txt --out diff-out/port
+
+      - name: No port yet
+        if: steps.port.outputs.bd == ''
+        run: echo "::notice::tests/diff/build-port.sh printed no binary; port lane skipped"
+
+      - name: Upload transcripts and diffs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diff-out
+          path: diff-out/

@@ -6,7 +6,7 @@ drop-in replacement for the Go implementation, compatible with bd v1.3.0.
 
 **Status: skeleton.** The core issue model and its JSON are complete and
 checked byte for byte against beads' own Go types. The command line answers
-`bd version`, `bd help` and the `--json` output contract; the storage layer and
+`bd version` (with the commit and branch it was built from), `bd help` and the `--json` output contract; the storage layer and
 the other commands are next.
 
 ## Building

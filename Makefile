@@ -7,12 +7,23 @@ GOOSE ?= $(if $(wildcard $(TOOLCHAIN_GOOSE)),$(TOOLCHAIN_GOOSE),goose)
 SOURCES := bd.goose $(wildcard beads/*.goose)
 BUILD := build
 
-.PHONY: all test unit golden golden-update toolchain clean
+.PHONY: all test unit golden golden-update toolchain clean FORCE
 
 all: bd
 
-bd: $(SOURCES)
+bd: $(SOURCES) $(BUILD)/build_info.goose
 	$(GOOSE) build -o $@ bd.goose
+
+# The commit and branch bd reports, as Go's bd reads them from its build
+# info. Rewritten only when they change, so bd is not rebuilt for nothing.
+$(BUILD)/build_info.goose: FORCE
+	@mkdir -p $(BUILD)
+	@printf 'namespace build_info;\nlet COMMIT = "%s";\nlet BRANCH = "%s";\n' \
+		"$$(git rev-parse HEAD 2>/dev/null)" \
+		"$$(git symbolic-ref --short HEAD 2>/dev/null)" > $@.tmp
+	@cmp -s $@.tmp $@ && rm $@.tmp || mv $@.tmp $@
+
+FORCE:
 
 $(BUILD)/unit: tests/unit.goose tests/check.goose $(SOURCES)
 	@mkdir -p $(BUILD)

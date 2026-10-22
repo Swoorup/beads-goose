@@ -126,10 +126,12 @@ fn test_json_layout() {
 }
 
 // Runs the command line on args: its exit code, stdout and stderr.
-fn bd(args: const (const u8[:])[:], envelope: bool = false) -> i64, u8[>..], u8[>..] {
+fn bd(args: const (const u8[:])[:], envelope: bool = false, commit: const u8[:] = "", branch: const u8[:] = "")
+        -> i64, u8[>..], u8[>..] {
     var out: u8[>..] = [];
     var err: u8[>..] = [];
-    let code = cli::run(args, cli::Env { json_envelope: envelope, .. }, out, err);
+    let env = cli::Env { json_envelope: envelope, commit: commit, branch: branch, .. };
+    let code = cli::run(args, env, out, err);
     return code, out, err;
 }
 
@@ -151,6 +153,23 @@ fn test_cli() {
         let code, out, err = bd(["--json", "version"], true);
         check::expect_eq(out, "{\n  \"data\": {\n    \"build\": \"goose\",\n    \"version\": \"1.3.0\"\n  },\n  \"schema_version\": 1\n}\n",
                          "bd version --json with BD_JSON_ENVELOPE=1");
+    }
+    {
+        let code, out, err = bd(["version"], false, "9d6fff760b7a314b476539198504d77ce0959656", "main");
+        check::expect_eq(out, "bd version 1.3.0 (goose: main@9d6fff760b7a)\n", "bd version with commit and branch");
+    }
+    {
+        let code, out, err = bd(["version"], false, "9d6fff760b7a314b476539198504d77ce0959656");
+        check::expect_eq(out, "bd version 1.3.0 (goose: 9d6fff760b7a)\n", "bd version with a commit only");
+    }
+    {
+        let code, out, err = bd(["-V"], false, "9d6fff760b7a314b476539198504d77ce0959656", "main");
+        check::expect_eq(out, "bd version 1.3.0 (goose)\n", "bd -V names no commit, as in bd");
+    }
+    {
+        let code, out, err = bd(["version", "--json"], false, "abc", "main");
+        check::expect_eq(out, "{\n  \"branch\": \"main\",\n  \"build\": \"goose\",\n  \"commit\": \"abc\",\n  \"schema_version\": 1,\n  \"version\": \"1.3.0\"\n}\n",
+                         "bd version --json with commit and branch");
     }
     {
         let code, out, err = bd(["version", "bd-123"]);

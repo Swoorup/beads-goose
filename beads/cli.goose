@@ -14,10 +14,12 @@ let BUILD = "goose";
 // The version of the --json output contract.
 let JSON_SCHEMA_VERSION = 1;
 
-// What run needs from the process environment, read once at the edge.
+// What run needs from the process and the build, read once at the edge.
 struct Env {
     name: const u8[:] = "bd",        // BD_NAME: the binary's name in help text
     json_envelope: bool = false,     // BD_JSON_ENVELOPE=1: wrap --json output in {data, schema_version}
+    commit: const u8[:] = "",        // the git commit bd was built from, if known
+    branch: const u8[:] = "",        // and its branch
 }
 
 // Where a command's text goes, and the global options it was given.
@@ -70,19 +72,38 @@ fn fail(io: Io&, message: const u8[:]) -> i64 {
 
 // --- commands -------------------------------------------------------------------
 
+// Go's shortCommit: the first 12 characters of a commit hash.
+fn short_commit(commit: const u8[:]) -> const u8[:] { if commit.len > 12 { commit[..12] } else { commit } }
+
+fn json_string(s: const u8[:]) -> u8[>..] {
+    var out: u8[>..] = [];
+    gojson::format_string(out, s);
+    return out;
+}
+
 fn version_command(io: Io&, args: const (const u8[:])[:]) -> i64 {
     if args.len > 0 {
         return fail(io, str("bd version prints bd's own version information and takes no arguments.\n",
                             "Did you mean:  bd versions ", args[0]));
     }
+    let commit = io.env.commit;
+    let branch = io.env.branch;
     if io.json {
-        var version: u8[>..] = [];
-        gojson::format_string(version, VERSION);
-        var build: u8[>..] = [];
-        gojson::format_string(build, BUILD);
-        var members = [gojson::Member { key: "version", value: version },
-                       gojson::Member { key: "build", value: build }];
+        // commit and branch are there when they are known, as in bd.
+        let version = json_string(VERSION);
+        let build = json_string(BUILD);
+        let commit_text = json_string(commit);
+        let branch_text = json_string(branch);
+        var members: gojson::Member[>..] = [];
+        members.push(gojson::Member { key: "version", value: version });
+        members.push(gojson::Member { key: "build", value: build });
+        if commit.len > 0 { members.push(gojson::Member { key: "commit", value: commit_text }); }
+        if branch.len > 0 { members.push(gojson::Member { key: "branch", value: branch_text }); }
         output_json(io, members);
+    } else if commit.len > 0 && branch.len > 0 {
+        format(io.out, "bd version ", VERSION, " (", BUILD, ": ", branch, "@", short_commit(commit), ")\n");
+    } else if commit.len > 0 {
+        format(io.out, "bd version ", VERSION, " (", BUILD, ": ", short_commit(commit), ")\n");
     } else {
         format(io.out, "bd version ", VERSION, " (", BUILD, ")\n");
     }

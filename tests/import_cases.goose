@@ -8,6 +8,7 @@ import beads from "../beads";
 import beads.doltjson;
 import beads.rowid;
 import beads.sha256;
+import beads.gosyntax;
 import .check;
 
 fn mysql(text: const u8[:]) -> u8[>..] {
@@ -53,7 +54,55 @@ fn test_rowid() {
                      "an imported comment's id, as bd 1.3.0 derived it");
 }
 
+// Go's own messages for text that is not JSON (encoding/json, go1.24).
+fn test_syntax_errors() {
+    check::expect_eq(gosyntax::syntax_error("{bad"), "invalid character 'b' looking for beginning of object key string", "{bad");
+    check::expect_eq(gosyntax::syntax_error("{\"a\" 1}"), "invalid character '1' after object key", "{\"a\" 1}");
+    check::expect_eq(gosyntax::syntax_error("{\"a\":1 x"), "invalid character 'x' after object key:value pair", "{\"a\":1 x");
+    check::expect_eq(gosyntax::syntax_error("[1 2]"), "invalid character '2' after array element", "[1 2]");
+    check::expect_eq(gosyntax::syntax_error("1 2"), "invalid character '2' after top-level value", "1 2");
+    check::expect_eq(gosyntax::syntax_error("\"a\x01\""), "invalid character '\\x01' in string literal", "\"a\x01\"");
+    check::expect_eq(gosyntax::syntax_error("\"\\q\""), "invalid character 'q' in string escape code", "\"\\q\"");
+    check::expect_eq(gosyntax::syntax_error("\"\\u12g4\""), "invalid character 'g' in \\u hexadecimal character escape", "\"\\u12g4\"");
+    check::expect_eq(gosyntax::syntax_error("-x"), "invalid character 'x' in numeric literal", "-x");
+    check::expect_eq(gosyntax::syntax_error("1.x"), "invalid character 'x' after decimal point in numeric literal", "1.x");
+    check::expect_eq(gosyntax::syntax_error("1ex"), "invalid character 'x' in exponent of numeric literal", "1ex");
+    check::expect_eq(gosyntax::syntax_error("tru"), "invalid character ' ' in literal true (expecting 'e')", "tru");
+    check::expect_eq(gosyntax::syntax_error("trux"), "invalid character 'x' in literal true (expecting 'e')", "trux");
+    check::expect_eq(gosyntax::syntax_error("nul!"), "invalid character '!' in literal null (expecting 'l')", "nul!");
+    check::expect_eq(gosyntax::syntax_error("{\"a\":"), "unexpected end of JSON input", "{\"a\":");
+    check::expect_eq(gosyntax::syntax_error(""), "unexpected end of JSON input", "");
+    check::expect_eq(gosyntax::syntax_error("  "), "unexpected end of JSON input", "  ");
+    check::expect_eq(gosyntax::syntax_error("]"), "invalid character ']' looking for beginning of value", "]");
+    check::expect_eq(gosyntax::syntax_error("\xe9"), "invalid character 'é' looking for beginning of value", "\xe9");
+    check::expect_eq(gosyntax::syntax_error("\x7f"), "invalid character '\\x7f' looking for beginning of value", "\x7f");
+    check::expect_eq(gosyntax::syntax_error("{\"a\":1,}"), "invalid character '}' looking for beginning of object key string", "{\"a\":1,}");
+    check::expect_eq(gosyntax::syntax_error("[1,]"), "invalid character ']' looking for beginning of value", "[1,]");
+    check::expect_eq(gosyntax::syntax_error("{}"), "", "{}");
+    check::expect_eq(gosyntax::syntax_error("[]"), "", "[]");
+    check::expect_eq(gosyntax::syntax_error("{\"a\":[1,{\"b\":null}]}"), "", "{\"a\":[1,{\"b\":null}]}");
+    check::expect_eq(gosyntax::syntax_error("'x'"), "invalid character '\\'' looking for beginning of value", "'x'");
+    check::expect_eq(gosyntax::syntax_error("{\"a\":1}}"), "invalid character '}' after top-level value", "{\"a\":1}}");
+    check::expect_eq(gosyntax::syntax_error("01"), "invalid character '1' after top-level value", "01");
+    check::expect_eq(gosyntax::syntax_error("-"), "invalid character ' ' in numeric literal", "-");
+    check::expect_eq(gosyntax::syntax_error("1."), "invalid character ' ' after decimal point in numeric literal", "1.");
+    check::expect_eq(gosyntax::syntax_error("1e"), "invalid character ' ' in exponent of numeric literal", "1e");
+    check::expect_eq(gosyntax::syntax_error("1e+"), "invalid character ' ' in exponent of numeric literal", "1e+");
+    check::expect_eq(gosyntax::syntax_error("\"\\"), "invalid character ' ' in string escape code", "\"\\");
+    check::expect_eq(gosyntax::syntax_error("\"\\u1"), "invalid character ' ' in \\u hexadecimal character escape", "\"\\u1");
+    check::expect_eq(gosyntax::syntax_error("\"ab"), "unexpected end of JSON input", "\"ab");
+    check::expect_eq(gosyntax::syntax_error("fals"), "invalid character ' ' in literal false (expecting 'e')", "fals");
+    check::expect_eq(gosyntax::syntax_error("n"), "invalid character ' ' in literal null (expecting 'u')", "n");
+    check::expect_eq(gosyntax::syntax_error("{\"a\":tr"), "invalid character ' ' in literal true (expecting 'u')", "{\"a\":tr");
+    check::expect_eq(gosyntax::syntax_error("\x85"), "invalid character '\\u0085' looking for beginning of value", "\x85");
+    check::expect_eq(gosyntax::syntax_error("\xad"), "invalid character '\\u00ad' looking for beginning of value", "\xad");
+    check::expect_eq(gosyntax::syntax_error("\"\t\""), "invalid character '\\t' in string literal", "\"\t\"");
+    check::expect_eq(gosyntax::kind(" [1]"), "array", "kind of an array");
+    check::expect_eq(gosyntax::kind("12"), "number", "kind of a number");
+}
+
 fn run() {
     test_doltjson();
     test_rowid();
+    test_syntax_errors();
 }

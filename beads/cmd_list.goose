@@ -319,3 +319,21 @@ fn list_command(c: Ctx&) -> i64 {
     }
     return 0;
 }
+
+// --- bd children ----------------------------------------------------------------
+
+let CHILDREN_FLAGS = [
+    flags::Spec { name: "pretty", usage: "Show children in tree format" },
+];
+
+// bd children <parent>: bd list --parent <parent> --status all.
+fn children_command(c: Ctx&) -> i64 {
+    guard c.args.len == 1 else { return fail_plain(c.io, str("accepts 1 arg(s), received ", c.args.len)); }
+    var given: flags::Flag[>..] = [];
+    for f in c.flags { given.push(f); }
+    given.push(flags::Flag { name: "parent", value: c.args[0] });
+    given.push(flags::Flag { name: "status", value: "all" });
+    let none: (const u8[:])[] = [];
+    var lc = Ctx { io: c.io, ws: c.ws, store: c.store, flags: given, args: none, log: c.log, text: c.text, effects: c.effects };
+    return list_command(lc);
+}

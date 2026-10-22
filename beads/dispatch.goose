@@ -23,6 +23,7 @@ import .cmd_list;
 struct Command { name: const u8[:], short: const u8[:] }
 
 let COMMANDS = [
+    Command { name: "children", short: "List child beads of a parent" },
     Command { name: "close", short: "Close one or more issues" },
     Command { name: "create", short: "Create a new issue (or batch from markdown/graph JSON)" },
     Command { name: "export", short: "Export issues to JSONL format" },
@@ -54,6 +55,7 @@ fn command_flags(name: const u8[:]) -> const flags::Spec[:] {
     if name == "update" { return UPDATE_FLAGS; }
     if name == "close" { return CLOSE_FLAGS; }
     if name == "list" { return LIST_FLAGS; }
+    if name == "children" { return CHILDREN_FLAGS; }
     if name == "reopen" { return REOPEN_FLAGS; }
     return VERSION_FLAGS;
 }
@@ -62,7 +64,7 @@ fn command_flags(name: const u8[:]) -> const flags::Spec[:] {
 // requires before it runs.
 fn uses_store(name: const u8[:]) -> bool {
     name == "show" || name == "export" || name == "update" || name == "close" || name == "reopen" ||
-        name == "list"
+        name == "list" || name == "children"
 }
 
 // The files a command line wants read before it runs, beside the store
@@ -141,6 +143,7 @@ fn run(argv: const (const u8[:])[:], env: Env, ws: Workspace, out: u8[>..]&, err
     if name == "close" { return close_command(c, argv[at] == "done"); }
     if name == "reopen" { return reopen_command(c); }
     if name == "list" { return list_command(c); }
+    if name == "children" { return children_command(c); }
     return unknown_command(io, argv[at]);
 }
 

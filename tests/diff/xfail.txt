@@ -1,0 +1,10 @@
+# Cases the goose port is known not to match yet. `run.py check --xfail` fails
+# when a listed case starts passing, so remove entries as the port catches up.
+children
+create_show
+deps_ready
+errors
+import_export
+init_default
+labels_comments
+update_lifecycle

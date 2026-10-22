@@ -225,7 +225,7 @@ Invariants (rejected with exit 1 when violated):
 **Status** (built in): `open`, `in_progress`, `blocked`, `deferred`, `closed`,
 `pinned`, `hooked`. Custom statuses come from config `status.custom`
 (`name[:category]`, name matches `^[a-z][a-z0-9_-]*$`, at most 50) with
-categories `active` (appears in `bd ready`), `wip`, `done`, `frozen`, or none.
+categories `active` (claimable like `open`), `wip`, `done`, `frozen`, or none.
 `bd statuses --json` prints each built-in with its category, icon and
 description (see transcript).
 
@@ -378,7 +378,8 @@ Issues are never blocked by `related`, `discovered-from` or graph-link edges.
 
 Default filter (upstream `sqlbuild/ready.go`):
 
-- status `open` or a custom status in category `active` (not `in_progress`);
+- status `open` only: neither `in_progress` nor a custom status, even one in
+  category `active`, though `bd ready --claim` claims from those too;
 - `pinned` false, `is_blocked` false, not ephemeral (unless `--include-ephemeral`);
 - `issue_type` not in {`merge-request`, `gate`, `molecule`, `rig`} ∪ infra
   types (unless `-t` names one);

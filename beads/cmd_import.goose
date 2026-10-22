@@ -80,8 +80,14 @@ fn import_command(c: Ctx&) -> i64 {
 
     // The options first: the rows the import makes point into them (the
     // actor), so they outlive the arena.
+    // status.custom entries are "name" or "name:category"; only the name is a status.
+    var custom_entries: (const u8[:])[>..] = [];
+    config_list(c.store, "status.custom", custom_entries);
     var custom_statuses: (const u8[:])[>..] = [];
-    config_list(c.store, "status.custom", custom_statuses);
+    for e in custom_entries {
+        let colon = find(e, ":");
+        custom_statuses.push(if colon < 0 { e } else { e[..colon] });
+    }
     var custom_types: (const u8[:])[>..] = [];
     config_list(c.store, "types.custom", custom_types);
     let now = gotime::from_unix(div_euclid(c.io.env.now, 1000000000), c.io.env.now % 1000000000);

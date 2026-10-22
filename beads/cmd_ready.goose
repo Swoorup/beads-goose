@@ -12,6 +12,7 @@ import .types;
 import .issue_json;
 import .store;
 import .graph;
+import .idgen;
 import .cli;
 
 let READY_FLAGS = [
@@ -61,6 +62,11 @@ let READY_UNSUPPORTED = ["claim", "gated", "mol", "explain", "label-pattern", "l
 fn format_ready_issue(out: u8[>..]&, i: types::Issue, counts: types::Counts) {
     var own = i;
     own.comments = i.comments[..0];
+    // Edges in the order Dolt keeps them, by edge ID.
+    var deps: types::Dependency[>..] = [];
+    for d in i.dependencies { deps.push(d); }
+    sort(deps) { a, b => compare(idgen::edge_key(i.id, a.depends_on_id)[..], idgen::edge_key(i.id, b.depends_on_id)[..]) < 0 };
+    own.dependencies = deps;
     var o = gojson::object(out);
     types::issue_fields(o, own);
     gojson::int_field(o, "dependency_count", counts.dependency_count);

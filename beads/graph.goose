@@ -12,6 +12,7 @@ import json;
 import .gotime;
 import .gojson;
 import .types;
+import .idgen;
 
 type Issue = types::Issue;
 type Dependency = types::Dependency;
@@ -388,23 +389,25 @@ fn cycles(issues: const Issue[:]) -> (const u8[:])[>..], Span[>..] {
 struct TreeNode { pos: i64, depth: i64, parent: const u8[:], edge: const u8[:] }
 
 // An edge between positions, with its type.
-struct Link { from: i64, to: i64, dep_type: const u8[:] }
+struct Link { from: i64, to: i64, dep_type: const u8[:], key: u8[16] }
 
 // The edges a tree walk follows, from each issue to what it depends on (or,
-// going up, to what depends on it), with targets that are issues here, in
-// target id order; and each position's first link.
+// going up, to what depends on it), with targets that are issues here; and
+// each position's first link. Each issue's links are in edge ID order, the
+// order Dolt reads an issue's edges in when beads asks without an ORDER BY.
 fn links(issues: const Issue[:], ix: Index&, up: bool) -> Link[>..], i64[>..] {
     var ls: Link[>..] = [];
     for i, n in issues {
         for d in i.dependencies {
             let t = lookup(ix, d.depends_on_id);
             guard t >= 0 && d.dep_type != types::DEP_RELATES_TO else { continue; }
-            ls.push(if up { Link { t, n, d.dep_type } } else { Link { n, t, d.dep_type } });
+            let key = idgen::edge_key(i.id, d.depends_on_id);
+            ls.push(if up { Link { t, n, d.dep_type, key } } else { Link { n, t, d.dep_type, key } });
         }
     }
     fn less(a: Link, b: Link) -> bool {
         if a.from != b.from { return a.from < b.from; }
-        return compare(issues[a.to].id, issues[b.to].id) < 0;
+        return compare(a.key[..], b.key[..]) < 0;
     }
     sort(ls) { a, b => less(a, b) };
     var first: i64[>..] = [];

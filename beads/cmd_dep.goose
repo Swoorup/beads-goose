@@ -586,7 +586,7 @@ fn dep_remove(c: Ctx&, args: const (const u8[:])[:]) -> i64 {
 }
 
 // `bd dep relate` (or `unrelate`): a relates-to edge each way between two
-// issues, added or removed together.
+// issues, added or removed one after the other.
 fn dep_relate(c: Ctx&, args: const (const u8[:])[:], relate: bool) -> i64 {
     // These two report errors as cobra does by default, with the usage.
     let name = if relate { "relate" } else { "unrelate" };
@@ -609,12 +609,16 @@ fn dep_relate(c: Ctx&, args: const (const u8[:])[:], relate: bool) -> i64 {
     if relate {
         guard a != b else { return usage_error("cannot relate an issue to itself"); }
         var ix = graph::index(g.issues);
-        var pending: u8[>..] = [];
-        let why = add_edge(c, pending, g, ix, edges, a, id2, types::DEP_RELATES_TO, now);
+        // Each edge is written on its own, as beads commits each: when the
+        // second is refused, the first stays.
+        var first: u8[>..] = [];
+        let why = add_edge(c, first, g, ix, edges, a, id2, types::DEP_RELATES_TO, now);
         guard why.len == 0 else { return usage_error(str("failed to add relates-to ", id1, " -> ", id2, ": ", why)); }
-        let back = add_edge(c, pending, g, ix, edges, b, id1, types::DEP_RELATES_TO, now);
+        c.log.append(first);
+        var second: u8[>..] = [];
+        let back = add_edge(c, second, g, ix, edges, b, id1, types::DEP_RELATES_TO, now);
         guard back.len == 0 else { return usage_error(str("failed to add relates-to ", id2, " -> ", id1, ": ", back)); }
-        c.log.append(pending);
+        c.log.append(second);
     } else {
         remove_edge(c, g, edges, a, id2, now);
         remove_edge(c, g, edges, b, id1, now);
